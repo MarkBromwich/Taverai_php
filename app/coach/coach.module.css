@@ -1,0 +1,345 @@
+/* app/coach/coach.module.css */
+
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.titleRow {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.h1 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.grid {
+  display: grid;
+  gap: 18px;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  padding: 18px;
+  backdrop-filter: blur(10px);
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.cardTitle {
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.cardMeta {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.pill {
+  font-size: 12px;
+  font-weight: 900;
+  border-radius: 999px;
+  padding: 6px 10px;
+  border: 1px solid rgba(79, 140, 255, 0.35);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.pillGhost {
+  font-size: 12px;
+  font-weight: 900;
+  border-radius: 999px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: var(--muted);
+}
+
+/* ---------- Charts ---------- */
+
+.chartGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .chartGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chartBlock {
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: rgba(255,255,255,0.05);
+}
+
+.chartLabelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.chartLabel {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--muted);
+}
+
+.chartValue {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.spark {
+  width: 100%;
+  height: auto;
+}
+
+.axis {
+  stroke: rgba(255,255,255,0.12);
+  stroke-width: 1;
+}
+
+.line {
+  stroke: rgba(255,255,255,0.78);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dot {
+  fill: rgba(79, 140, 255, 0.90);
+}
+
+.xLabels {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ---------- Breakdown ---------- */
+
+.breakdownLegend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.legendFruit { background: rgba(34, 197, 94, 0.75); }
+.legendVeg { background: rgba(79, 140, 255, 0.75); }
+.legendCarbs { background: rgba(250, 204, 21, 0.85); }
+.legendFats { background: rgba(239, 68, 68, 0.70); }
+
+.breakdownList {
+  display: grid;
+  gap: 10px;
+}
+
+.breakdownRow {
+  display: grid;
+  grid-template-columns: 160px 1fr 160px;
+  gap: 10px;
+  align-items: center;
+}
+
+@media (max-width: 860px) {
+  .breakdownRow {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+.breakdownDate {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.breakdownNums {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+}
+
+@media (max-width: 860px) {
+  .breakdownNums {
+    text-align: left;
+  }
+}
+
+.stack {
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+  display: flex;
+}
+
+.seg { height: 100%; }
+.segFruit { background: rgba(34, 197, 94, 0.75); }
+.segVeg { background: rgba(79, 140, 255, 0.75); }
+.segCarbs { background: rgba(250, 204, 21, 0.85); }
+.segFats { background: rgba(239, 68, 68, 0.70); }
+
+/* ---------- Q&A ---------- */
+
+.field {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.label {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 110px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  color: var(--text);
+}
+
+.textarea:focus {
+  box-shadow: var(--focus);
+  border-color: rgba(79, 140, 255, 0.35);
+}
+
+.btnRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.btn {
+  appearance: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.06);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.btnPrimary {
+  background: linear-gradient(180deg, rgba(79,140,255,0.95), rgba(79,140,255,0.70));
+  border-color: rgba(79,140,255,0.40);
+}
+
+.btnGhost {
+  background: transparent;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.answerBox {
+  margin-top: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.05);
+  padding: 12px;
+}
+
+.answerTitle {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.answerText {
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  color: var(--text);
+}
+
+.note {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.loading {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.error {
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.14);
+  color: rgba(255, 255, 255, 0.92);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 14px;
+}

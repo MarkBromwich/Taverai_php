@@ -1,0 +1,257 @@
+.wrap {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 24px 32px;
+}
+
+/* ==============================
+   Top profile header
+   ============================== */
+
+.top {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 24px 0 18px;
+}
+
+.avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+
+  display: grid;
+  place-items: center;
+
+  font-weight: 900;
+  font-size: 18px;
+  color: rgba(255,255,255,0.92);
+
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+}
+
+.topText {
+  flex: 1;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.name {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: rgba(255,255,255,0.92);
+}
+
+.handle {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.70);
+}
+
+.sub {
+  margin-top: 6px;
+  color: rgba(255,255,255,0.62);
+  font-size: 13px;
+}
+
+/* Status pill */
+.pill {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 6px 10px;
+  border-radius: 999px;
+
+  color: rgba(255,255,255,0.92);
+  background: rgba(118,199,192,0.14);
+  border: 1px solid rgba(118,199,192,0.28);
+}
+
+/* ==============================
+   Card
+   ============================== */
+
+.card {
+  margin-top: 18px;
+  border-radius: 16px;
+
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.22);
+  overflow: hidden;
+}
+
+.cardTitle {
+  padding: 14px 18px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.62);
+
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+}
+
+.cardBody {
+  padding: 18px;
+  display: grid;
+  gap: 18px; /* 👈 consistent vertical spacing */
+}
+
+/* ==============================
+   Rows
+   ============================== */
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.row + .row {
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.rowTitle {
+  font-weight: 900;
+  color: rgba(255,255,255,0.90);
+}
+
+.rowDesc {
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.4;
+}
+
+/* ==============================
+   Buttons
+   ============================== */
+
+.btn,
+.btnPrimary,
+.btnDanger {
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 120ms ease;
+}
+
+.btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.88);
+}
+
+.btn:hover {
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(118,199,192,0.35);
+}
+
+.btnPrimary {
+  background: rgba(118,199,192,0.18);
+  border: 1px solid rgba(118,199,192,0.35);
+  color: rgba(255,255,255,0.92);
+}
+
+.btnPrimary:hover {
+  background: rgba(118,199,192,0.24);
+}
+
+.dangerCard {
+  border-color: rgba(239,68,68,0.22);
+}
+
+.btnDanger {
+  background: rgba(239,68,68,0.14);
+  border: 1px solid rgba(239,68,68,0.28);
+  color: rgba(255,255,255,0.92);
+}
+
+.btnDanger:hover {
+  background: rgba(239,68,68,0.20);
+  border-color: rgba(239,68,68,0.38);
+}
+
+/* ==============================
+   Info Grid
+   ============================== */
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.infoItem {
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.infoLabel {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+}
+
+.infoValue {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.92);
+}
+
+/* ==============================
+   Error
+   ============================== */
+
+.errorLine {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(239,68,68,0.90);
+}
+
+/* ==============================
+   Mobile
+   ============================== */
+
+@media (max-width: 720px) {
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .wrap {
+    padding: 0 16px 24px;
+  }
+
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn,
+  .btnPrimary,
+  .btnDanger {
+    width: 100%;
+  }
+}

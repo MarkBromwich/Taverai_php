@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PlanType {
+  CALORIE
+  MEDITERRANEAN
+}
+
+model User {
+  id               String      @id @default(cuid())
+
+  // Personal info
+  firstName        String?
+  lastName         String?
+
+  // IMPORTANT:
+  // We are keeping the field name "username" to avoid breaking existing routes/UI,
+  // but the value stored here should be the user's EMAIL address.
+  username         String      @unique
+
+  passwordHash     String
+  createdAt        DateTime    @default(now())
+
+  dailyCalorieGoal Int?
+
+  // Optional, future-friendly fields
+  paidStatus       String?     @default("Free")
+  avatarUrl        String?
+
+  entries          FoodEntry[]
+  plans            UserPlan[]
+  preferences      UserPreferences?
+
+  resetTokens      PasswordResetToken[]
+}
+
+model UserPreferences {
+  id                 String   @id @default(cuid())
+  userId              String   @unique
+
+  theme              String?  @default("dark")   // "dark" | "light" | "system"
+  units              String?  @default("metric") // "metric" | "imperial"
+  healthAppConnected Boolean  @default(false)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FoodEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  text      String
+  createdAt DateTime @default(now())
+
+  calories  Float?
+  proteinG  Float?
+  carbsG    Float?
+  fatG      Float?
+
+  parsed    Json?
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scores    EntryPlanScore[]
+
+  @@index([userId, createdAt])
+}
+
+model UserPlan {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  type      PlanType
+  config    Json?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scores    EntryPlanScore[]
+
+  @@index([userId, createdAt])
+}
+
+model EntryPlanScore {
+  id        String   @id @default(cuid())
+  entryId   String
+  planId    String
+  score     Int
+  details   Json?
+  createdAt DateTime @default(now())
+
+  entry     FoodEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  plan      UserPlan  @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, planId])
+  @@index([planId, createdAt])
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  // (optional but nice to have for audit/debug)
+  ip         String?
+  userAgent  String?
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+}

@@ -1,0 +1,332 @@
+/* ==============================
+   Taverai App Shell Styles
+   ============================== */
+
+.shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* =====================================
+   HEADER
+   ===================================== */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+
+  background: rgba(5, 11, 20, 0.70);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+
+.headerRow {
+  height: 64px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.logoWrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  overflow: hidden;
+
+  display: grid;
+  place-items: center;
+
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 10px 24px rgba(118, 199, 192, 0.18);
+}
+
+/* =====================================
+   DESKTOP NAV
+   ===================================== */
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+
+.navLink {
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 800;
+  font-size: 14px;
+
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+
+  transition: all 140ms ease;
+}
+
+.navLink:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+.navLinkActive {
+  background: var(--accent-soft);
+  border-color: rgba(118,199,192,0.45);
+  color: white;
+}
+
+/* App-like press feedback */
+.navLink:active,
+.tab:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* =====================================
+   HEADER RIGHT (avatar)
+   ===================================== */
+
+.headerRight {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.avatarBtn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+.avatarCircle {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+
+  display: grid;
+  place-items: center;
+
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.25);
+}
+
+.avatarInitial {
+  font-weight: 900;
+  font-size: 14px;
+  color: rgba(255,255,255,0.92);
+  letter-spacing: 0.02em;
+}
+
+.avatarBtn:hover .avatarCircle {
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(118,199,192,0.45);
+}
+
+/* =====================================
+   FOOTER
+   ===================================== */
+
+.footer {
+  margin-top: 40px;
+  border-top: 1px solid var(--border);
+  background: rgba(5, 11, 20, 0.70);
+  backdrop-filter: blur(10px);
+}
+
+.footerRow {
+  padding: 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footerMuted {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Hide footer on mobile */
+@media (max-width: 860px) {
+  .footer {
+    display: none;
+  }
+}
+
+/* =====================================
+   MOBILE BOTTOM NAV
+   ===================================== */
+
+.bottomNav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(5, 11, 20, 0.85);
+  backdrop-filter: blur(20px);
+
+  border-top: 1px solid var(--border);
+}
+
+.bottomNavInner {
+  max-width: 700px;
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.tab {
+  text-decoration: none;
+  color: var(--muted);
+  border-radius: 18px;
+  padding: 10px 8px;
+
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+
+  border: 1px solid transparent;
+  transition: all 140ms ease;
+}
+
+.tab:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+
+.tabActive {
+  color: white;
+  background: var(--accent-soft);
+  border-color: rgba(118,199,192,0.45);
+  box-shadow: 0 6px 18px rgba(118,199,192,0.25);
+}
+
+.tabIcon {
+  width: 22px;
+  height: 22px;
+}
+
+.tabLabel {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+
+/* Bottom nav avatar */
+
+.bottomAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+
+  display: grid;
+  place-items: center;
+
+  font-size: 12px;
+  font-weight: 900;
+
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: white;
+}
+
+.tabActive .bottomAvatar {
+  background: white;
+  color: #0b111a;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  color: white;
+  font-weight: 900;
+}
+
+.headerAvatar:hover {
+  background: var(--accent-soft);
+  border-color: rgba(118, 199, 192, 0.45);
+}
+
+.navText {
+  white-space: nowrap;
+}
+
+.bottomLinkActive {
+  color: #5b8cff;
+}
+
+.bottomLinkActive svg {
+  stroke: #5b8cff;
+}
+
+.footerLink {
+  display: flex;
+  /* align-items: center; */
+  gap: 6px;
+}
+
+.tabActive svg {
+  color: #5b8cff;
+}
+
+.tab svg {
+  transition: 0.2s ease;
+}
+
+/* Hide nav text on mobile */
+@media (max-width: 768px) {
+  .navText {
+    display: none;
+  }
+
+  .navLink {
+    padding: 10px;
+    justify-content: center;
+  }
+}
+
+/* Hide brand text on small screens */
+@media (max-width: 768px) {
+  .brandText {
+    display: none;
+  }
+}
+
+/* Hide bottom nav on desktop */
+@media (min-width: 860px) {
+  .bottomNav {
+    display: none;
+  }
+}
