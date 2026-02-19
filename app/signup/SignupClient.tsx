@@ -5,10 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import styles from "../log/log.module.css";
 
-export default function SignupPage() {
+export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/log";
+
+  // Safe redirect target
+  const rawNext = searchParams.get("next");
+  const next = rawNext && rawNext.startsWith("/") ? rawNext : "/log";
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -55,8 +58,9 @@ export default function SignupPage() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setError(data?.detail ? `${data.error} — ${data.detail}` : data?.error || "Signup failed");
-        setLoading(false);
+        setError(
+          data?.detail ? `${data.error} — ${data.detail}` : data?.error || "Signup failed"
+        );
         return;
       }
 
@@ -64,6 +68,7 @@ export default function SignupPage() {
       router.refresh();
     } catch (err: any) {
       setError(String(err?.message ?? err));
+    } finally {
       setLoading(false);
     }
   }
@@ -71,7 +76,6 @@ export default function SignupPage() {
   return (
     <main className={styles.container} style={{ maxWidth: 520 }}>
       <section className={styles.card} style={{ maxWidth: 460, margin: "0 auto" }}>
-        {/* Logo */}
         <div style={{ display: "grid", justifyItems: "center", marginBottom: 12 }}>
           <Image
             src="/logo.png"
@@ -90,9 +94,7 @@ export default function SignupPage() {
 
         <form onSubmit={handleSubmit} style={{ marginTop: 12 }}>
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="firstName">
-              First name
-            </label>
+            <label className={styles.label} htmlFor="firstName">First name</label>
             <input
               id="firstName"
               className={styles.input}
@@ -104,9 +106,7 @@ export default function SignupPage() {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="lastName">
-              Last name
-            </label>
+            <label className={styles.label} htmlFor="lastName">Last name</label>
             <input
               id="lastName"
               className={styles.input}
@@ -118,9 +118,7 @@ export default function SignupPage() {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="email">
-              Email (this is your username)
-            </label>
+            <label className={styles.label} htmlFor="email">Email (this is your username)</label>
             <input
               id="email"
               className={styles.input}
@@ -134,9 +132,7 @@ export default function SignupPage() {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="password">
-              Password
-            </label>
+            <label className={styles.label} htmlFor="password">Password</label>
             <input
               id="password"
               className={styles.input}
@@ -150,9 +146,7 @@ export default function SignupPage() {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="confirmPassword">
-              Confirm password
-            </label>
+            <label className={styles.label} htmlFor="confirmPassword">Confirm password</label>
             <input
               id="confirmPassword"
               className={styles.input}
@@ -170,12 +164,18 @@ export default function SignupPage() {
             )}
           </div>
 
-          <button type="submit" className={styles.authBtn} disabled={loading} style={{ marginTop: 20 }}>
+          <button
+            type="submit"
+            className={styles.authBtn}
+            disabled={loading}
+            style={{ marginTop: 20 }}
+          >
             {loading ? "Creating…" : "Create account"}
           </button>
 
           <div className={styles.muted} style={{ marginTop: 12 }}>
-            Already have an account? <a href={`/login?next=${encodeURIComponent(next)}`}>Log in</a>
+            Already have an account?{" "}
+            <a href={`/login?next=${encodeURIComponent(next)}`}>Log in</a>
           </div>
         </form>
       </section>
