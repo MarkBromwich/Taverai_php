@@ -1,38 +1,20 @@
 services:
-  # This is your application service (e.g., Node.js, Python, etc.)
-  # You need to add this and configure it for your app.
-  app:
-    # image: your-app-image # Or build: .
-    restart: unless-stopped
-    environment:
-      # THIS is where the DATABASE_URL for Prisma goes!
-      DATABASE_URL: "postgresql://markwbromwich:xzsX3Rb2ZvsV1lMDkByKQW299DOxlErS@db:5432/foodapp_gltw"
-    ports:
-      - "3000:3000" # Example: Exposing your app on port 3000
-    depends_on:
-      - db
-
-  # This is your database service
   db:
     image: postgres:16
     environment:
-      POSTGRES_USER: markwbromwich
-      POSTGRES_PASSWORD: xzsX3Rb2ZvsV1lMDkByKQW299DOxlErS
-      POSTGRES_DB: foodapp_gltw
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: foodapp
     ports:
-      - "5432:5432"
+      - "8080:8080"
     volumes:
-      # Correct volume mapping
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:
     restart: unless-stopped
-
-  # This is your database admin tool
   adminer:
     image: adminer
     restart: unless-stopped
     ports:
-      # Correct port for Adminer's web UI
-      - "8080:8080"
+      - "5555:5555"
 
 volumes:
   pgdata:
