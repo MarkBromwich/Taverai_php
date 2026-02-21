@@ -5,49 +5,51 @@ const prisma = new PrismaClient();
 
 /**
  * Keep this list stable. Use `slug` as your “authoritative ID”
- * so you can rename labels later without breaking references.
+ * so you can rename names later without breaking references.
+ *
+ * NOTE: We intentionally do NOT include weightwatchers.
  */
 const TEMPLATES = [
-  // your list
-  { slug: "mediterranean", label: "Mediterranean Diet", category: "balanced" },
-  { slug: "flexitarian", label: "Flexitarian Diet", category: "balanced" },
-  { slug: "dash", label: "DASH Diet", category: "heart" },
-  { slug: "mind", label: "MIND Diet", category: "brain" },
-  { slug: "plant-forward", label: "Plant-Forward / Plant-Based", category: "plant" },
-  { slug: "pescatarian", label: "Pescatarian", category: "plant" },
-  { slug: "volumetrics", label: "Volumetrics Diet", category: "weight" },
-  { slug: "intermittent-fasting", label: "Intermittent Fasting / Time-Restricted Eating", category: "timing" },
-  { slug: "low-gi", label: "Low-Glycemic Index (GI) Diet", category: "blood-sugar" },
-  { slug: "anti-inflammatory", label: "Anti-inflammatory Diet", category: "recovery" },
-  { slug: "high-fiber", label: "High-Fiber (Fibermaxxing)", category: "gut" },
-  { slug: "keto", label: "Ketogenic (Keto) / Low-Carb", category: "low-carb" },
-  { slug: "paleo", label: "Paleo Diet", category: "whole-foods" },
-  { slug: "weightwatchers", label: "WeightWatchers (WW)", category: "weight" },
-  { slug: "whole30", label: "Whole30", category: "reset" },
+  { slug: "mediterranean", name: "Mediterranean Diet", category: "COMPOSITION" },
+  { slug: "flexitarian", name: "Flexitarian Diet", category: "COMPOSITION" },
+  { slug: "dash", name: "DASH Diet", category: "MEDICAL" },
+  { slug: "mind", name: "MIND Diet", category: "MEDICAL" },
+  { slug: "plant-forward", name: "Plant-Forward / Plant-Based", category: "COMPOSITION" },
+  { slug: "pescatarian", name: "Pescatarian", category: "COMPOSITION" },
+  { slug: "volumetrics", name: "Volumetrics Diet", category: "BEHAVIOR" },
+  { slug: "intermittent-fasting", name: "Intermittent Fasting / Time-Restricted Eating", category: "TIMING" },
+  { slug: "low-gi", name: "Low-Glycemic Index (GI) Diet", category: "MEDICAL" },
+  { slug: "anti-inflammatory", name: "Anti-inflammatory Diet", category: "MEDICAL" },
+  { slug: "high-fiber", name: "High-Fiber (Fibermaxxing)", category: "BEHAVIOR" },
+  { slug: "keto", name: "Ketogenic (Keto) / Low-Carb", category: "MACRO" },
+  { slug: "paleo", name: "Paleo Diet", category: "COMPOSITION" },
+  { slug: "whole30", name: "Whole30", category: "ELIMINATION" },
 
-  // a few common ones people expect (optional adds)
-  { slug: "vegetarian", label: "Vegetarian", category: "plant" },
-  { slug: "vegan", label: "Vegan", category: "plant" },
-  { slug: "high-protein", label: "High-Protein", category: "performance" },
-  { slug: "gluten-free", label: "Gluten-Free", category: "restriction" },
-  { slug: "low-fodmap", label: "Low-FODMAP", category: "gut" },
+  // optional adds
+  { slug: "vegetarian", name: "Vegetarian", category: "COMPOSITION" },
+  { slug: "vegan", name: "Vegan", category: "COMPOSITION" },
+  { slug: "high-protein", name: "High-Protein", category: "MACRO" },
+  { slug: "gluten-free", name: "Gluten-Free", category: "ELIMINATION" },
+  { slug: "low-fodmap", name: "Low-FODMAP", category: "MEDICAL" },
 ];
 
 async function main() {
-  // IMPORTANT: this assumes you created a model like PlanTemplate with a unique `slug`.
-  // If your table/model name is different, tell me what you named it and I’ll adjust.
+  // If WeightWatchers was previously seeded, remove it.
+  await prisma.planTemplate.deleteMany({
+    where: { slug: "weightwatchers" },
+  });
 
   for (const t of TEMPLATES) {
     await prisma.planTemplate.upsert({
       where: { slug: t.slug },
-      update: { label: t.label, category: t.category },
+      update: {
+        name: t.name,
+        category: t.category,
+      },
       create: {
         slug: t.slug,
-        label: t.label,
+        name: t.name,
         category: t.category,
-        // optional future-ready fields if you added them:
-        // config: {},
-        // isActive: true,
       },
     });
   }

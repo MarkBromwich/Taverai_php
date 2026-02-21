@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import styles from "./plans.module.css";
 
 type Plan = {
   id: string;
   name: string;
-  type: "CALORIE" | "MEDITERRANEAN";
+  type?: string;
   config: any;
   createdAt: string;
 };
@@ -15,110 +16,170 @@ type Me = {
   dailyCalorieGoal: number | null;
 };
 
+type PlanTemplate = {
+  slug: string;
+  name: string;
+  category: string;
+};
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
 export default function PlansPage() {
+  console.log("✅ PlansPage UPDATED", new Date().toISOString());
+
   const [plans, setPlans] = useState<Plan[]>([]);
   const [me, setMe] = useState<Me | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [authRequired, setAuthRequired] = useState(false);
 
-  // goal editor
-  const [goalInput, setGoalInput] = useState<string>("");
+  const [templates, setTemplates] = useState<PlanTemplate[]>([]);
+  const [tLoading, setTLoading] = useState(false);
+  const [tErr, setTErr] = useState<string | null>(null);
 
-  // plan creators
+  const [selectedTemplateSlug, setSelectedTemplateSlug] = useState<string>("");
+  const [addingTemplate, setAddingTemplate] = useState(false);
+
+  const [goalEnabled, setGoalEnabled] = useState(true);
+  const [goalValue, setGoalValue] = useState<number>(2000);
+
   const [calName, setCalName] = useState("Calories Plan");
   const [calTarget, setCalTarget] = useState("2000");
 
-  async function loadMe() {
-    const res = await fetch("/api/me");
-    const txt = await res.text();
-    let data: any = null;
-    try {
-      data = JSON.parse(txt);
-    } catch {}
-
-    if (!res.ok) {
-      setMsg(data?.error ?? txt ?? "Failed to load user");
-      return;
+  function handle401(res: Response) {
+    if (res.status === 401) {
+      setAuthRequired(true);
+      setMsg("Session expired. Please log in again.");
+      return true;
     }
+    return false;
+  }
 
+  async function loadMe() {
+    const res = await fetch("/api/me", { cache: "no-store" });
+    if (handle401(res)) return;
+
+    const data = await res.json();
     const u: Me = data.user;
     setMe(u);
-    setGoalInput(u.dailyCalorieGoal == null ? "" : String(u.dailyCalorieGoal));
+
+    if (u.dailyCalorieGoal == null) {
+      setGoalEnabled(false);
+      setGoalValue(2000);
+    } else {
+      setGoalEnabled(true);
+      setGoalValue(clamp(Number(u.dailyCalorieGoal), 1200, 4500));
+    }
   }
 
   async function loadPlans() {
-    const res = await fetch("/api/plans");
-    const txt = await res.text();
-    let data: any = null;
-    try {
-      data = JSON.parse(txt);
-    } catch {}
+    const res = await fetch("/api/plans", { cache: "no-store" });
+    if (handle401(res)) return;
 
-    if (!res.ok) {
-      setMsg(data?.error ?? txt ?? "Failed to load plans");
-      return;
-    }
-
+    const data = await res.json();
     setPlans(data.plans ?? []);
   }
 
+  async function loadTemplates() {
+    setTLoading(true);
+    setTErr(null);
+
+    try {
+      const res = await fetch("/api/plan-templates", { cache: "no-store" });
+      if (handle401(res)) return;
+
+      const data = await res.json();
+      const rows = Array.isArray(data?.templates) ? data.templates : [];
+
+      // hide WeightWatchers in UI
+      const filtered = rows.filter((t: PlanTemplate) => t.slug !== "weightwatchers");
+
+      setTemplates(filtered);
+
+      // default dropdown selection
+      setSelectedTemplateSlug((prev) => {
+        if (prev) return prev;
+        return filtered.length ? filtered[0].slug : "";
+      });
+    } catch {
+      setTErr("Failed to load plan templates");
+      setTemplates([]);
+    } finally {
+      setTLoading(false);
+    }
+  }
+
   useEffect(() => {
-    loadMe();
-    loadPlans();
+    void loadMe();
+    void loadPlans();
+    void loadTemplates();
   }, []);
 
+  const templatesByCategory = useMemo(() => {
+    const map = new Map<string, PlanTemplate[]>();
+    for (const t of templates) {
+      const key = t.category || "OTHER";
+      const arr = map.get(key) ?? [];
+      arr.push(t);
+      map.set(key, arr);
+    }
+    for (const arr of map.values()) {
+      arr.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [templates]);
+
   async function saveGoal() {
-    setMsg(null);
-
-    const trimmed = goalInput.trim();
-    const dailyCalorieGoal = trimmed === "" ? null : Number(trimmed);
-
     const res = await fetch("/api/me", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dailyCalorieGoal }),
+      body: JSON.stringify({
+        dailyCalorieGoal: goalEnabled ? Number(goalValue) : null,
+      }),
     });
 
-    const txt = await res.text();
-    let data: any = null;
-    try {
-      data = JSON.parse(txt);
-    } catch {}
+    if (handle401(res)) return;
 
-    if (!res.ok) {
-      setMsg(data?.error ?? txt ?? "Failed to save daily goal");
-      return;
-    }
-
+    const data = await res.json();
     setMe(data.user);
     setMsg("Daily calorie goal saved ✅");
   }
 
-  async function addMediterranean() {
+  async function addPlanFromTemplate(slug: string) {
     setMsg(null);
-    const res = await fetch("/api/plans", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "MEDITERRANEAN", name: "Mediterranean" }),
-    });
+    setAddingTemplate(true);
 
-    const txt = await res.text();
-    let data: any = null;
     try {
-      data = JSON.parse(txt);
-    } catch {}
+      const res = await fetch("/api/plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templateSlug: slug }),
+      });
 
-    if (!res.ok) {
-      setMsg(data?.error ?? txt ?? "Failed to add plan");
-      return;
+      if (handle401(res)) return;
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMsg(data?.error ?? "Failed to add plan");
+        return;
+      }
+
+      if (data?.plan) {
+        setPlans((prev) => [data.plan, ...prev]);
+      } else {
+        await loadPlans();
+      }
+
+      setMsg("Plan added ✅");
+    } finally {
+      setAddingTemplate(false);
     }
-
-    setMsg("Plan added ✅");
-    await loadPlans();
   }
 
   async function addCaloriePlan() {
     setMsg(null);
-    const targetCalories = Number(calTarget);
 
     const res = await fetch("/api/plans", {
       method: "POST",
@@ -126,151 +187,166 @@ export default function PlansPage() {
       body: JSON.stringify({
         type: "CALORIE",
         name: calName,
-        config: { targetCalories },
+        config: { targetCalories: Number(calTarget) },
       }),
     });
 
-    const txt = await res.text();
-    let data: any = null;
-    try {
-      data = JSON.parse(txt);
-    } catch {}
+    if (handle401(res)) return;
 
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setMsg(data?.error ?? txt ?? "Failed to add plan");
+      setMsg(data?.error ?? "Failed to add plan");
       return;
     }
 
-    setMsg("Plan added ✅");
     await loadPlans();
+    setMsg("Plan added ✅");
   }
 
   async function deletePlan(id: string) {
-    setMsg(null);
-    const res = await fetch(`/api/plans?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    const txt = await res.text();
-    let data: any = null;
-    try {
-      data = JSON.parse(txt);
-    } catch {}
+    const res = await fetch(`/api/plans?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
 
+    if (handle401(res)) return;
+
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setMsg(data?.error ?? txt ?? "Failed to delete plan");
+      setMsg(data?.error ?? "Failed to delete plan");
       return;
     }
 
-    setMsg("Plan deleted ✅");
-    await loadPlans();
+    setPlans((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  if (authRequired) {
+    return (
+      <main style={{ padding: 24, maxWidth: 680, margin: "0 auto" }}>
+        <h1>Choose Your Diet Plan</h1>
+        <p>Your session expired.</p>
+        <a href={`/login?next=${encodeURIComponent("/plans")}`}>Go to login</a>
+      </main>
+    );
   }
 
   return (
-    <main style={{ padding: 24, maxWidth: 680, margin: "0 auto" }}>
-      <h1>Choose Your Diet Plan</h1>
-      <p style={{ opacity: 0.75, marginTop: 6 }}>
-        Set your daily calorie goal here, and add diet plans you want scored.
-      </p>
-
-      <div style={{ marginTop: 10 }}>
-        <a href="/log">← Back to log</a>
+    <main className={styles.container}>
+      <div className={styles.header}>
+        <h1>Choose Your Diet Plan</h1>
+        {me?.username ? <p className={styles.subtle}>Signed in as {me.username}</p> : null}
       </div>
 
-      {msg && <p style={{ marginTop: 12 }}>{msg}</p>}
+      {msg && <p className={styles.subtle}>{msg}</p>}
 
-      {/* Daily calorie goal */}
-      <div style={{ marginTop: 16, padding: 14, border: "1px solid #ddd", borderRadius: 12 }}>
-        <h2 style={{ marginTop: 0 }}>Daily Calorie Goal</h2>
-        <div style={{ fontSize: 14, marginBottom: 10 }}>
-          <strong>User:</strong> {me?.username ?? "…"}
-        </div>
+      {/* Daily Calorie Goal */}
+      <div className={styles.card}>
+        <h2 className={styles.sectionTitle}>Daily Calorie Goal</h2>
 
-        <div style={{ display: "flex", gap: 10, alignItems: "end" }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>
-              Calories per day (leave blank to clear)
-            </div>
-            <input
-              value={goalInput}
-              onChange={(e) => setGoalInput(e.target.value)}
-              placeholder="e.g. 2000"
-              inputMode="numeric"
-              style={{ width: "100%", padding: 10, border: "1px solid #ccc", borderRadius: 10 }}
-            />
+        <label className={styles.subtle}>
+          <input
+            type="checkbox"
+            checked={goalEnabled}
+            onChange={(e) => setGoalEnabled(e.target.checked)}
+          />{" "}
+          Enable goal
+        </label>
+
+        <div className={styles.rangeWrapper} style={{ opacity: goalEnabled ? 1 : 0.5 }}>
+          <div className={styles.rangeHeader}>
+            <span>Calories/day</span>
+            <span>
+              <strong>{goalEnabled ? goalValue : "—"}</strong>
+            </span>
           </div>
 
-          <button
-            style={{
-              padding: "11px 14px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              background: "white",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
-            onClick={saveGoal}
-          >
-            Save goal
-          </button>
+          <input
+            type="range"
+            min={1200}
+            max={4500}
+            step={25}
+            value={goalValue}
+            disabled={!goalEnabled}
+            onChange={(e) => setGoalValue(Number(e.target.value))}
+            style={{ width: "100%", marginTop: 8 }}
+          />
+
+          <div className={styles.rangeScale}>
+            <span>1200</span>
+            <span>4500</span>
+          </div>
         </div>
 
-        <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
-          This goal is used on the Log page for tracking progress.
-        </div>
+        <button className={styles.buttonPrimary} onClick={saveGoal} style={{ marginTop: 12 }}>
+          Save goal
+        </button>
       </div>
 
-      {/* Diet plans */}
-      <div style={{ marginTop: 12, padding: 14, border: "1px solid #ddd", borderRadius: 12 }}>
-        <h2 style={{ marginTop: 0 }}>Diet Plans</h2>
+      {/* Diet Plans */}
+      <div className={styles.card}>
+        <h2 className={styles.sectionTitle}>Diet Plans</h2>
 
-        <div style={{ marginTop: 10 }}>
-          <button style={{ padding: 12, width: "100%" }} onClick={addMediterranean}>
-            Add Mediterranean Plan
-          </button>
-        </div>
-
-        <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #eee" }}>
-          <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}>
-            (Optional) Add Calories Plan for future comparisons
+        {tLoading ? (
+          <div className={styles.subtle}>Loading diet types…</div>
+        ) : tErr ? (
+          <div className={styles.subtle}>
+            {tErr}{" "}
+            <button className={styles.buttonSecondary} onClick={loadTemplates}>
+              Retry
+            </button>
           </div>
+        ) : templates.length === 0 ? (
+          <div className={styles.subtle}>No diet templates found.</div>
+        ) : (
+          <>
+            <select
+              className={styles.select}
+              value={selectedTemplateSlug}
+              onChange={(e) => setSelectedTemplateSlug(e.target.value)}
+            >
+              {templatesByCategory.map(([cat, list]) => (
+                <optgroup key={cat} label={cat}>
+                  {list.map((t) => (
+                    <option key={t.slug} value={t.slug}>
+                      {t.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
 
-          <div style={{ display: "flex", gap: 10 }}>
-            <input
-              style={{ flex: 1, padding: 10, border: "1px solid #ccc", borderRadius: 10 }}
-              value={calName}
-              onChange={(e) => setCalName(e.target.value)}
-              placeholder="Plan name"
-            />
-            <input
-              style={{ width: 140, padding: 10, border: "1px solid #ccc", borderRadius: 10 }}
-              value={calTarget}
-              onChange={(e) => setCalTarget(e.target.value)}
-              placeholder="Target"
-              inputMode="numeric"
-            />
-          </div>
+            <button
+              className={styles.buttonPrimary}
+              disabled={!selectedTemplateSlug || addingTemplate}
+              onClick={() => addPlanFromTemplate(selectedTemplateSlug)}
+              style={{ marginTop: 12 }}
+            >
+              {addingTemplate ? "Adding…" : "Add selected diet plan"}
+            </button>
+          </>
+        )}
 
-          <button style={{ marginTop: 10, padding: 12, width: "100%" }} onClick={addCaloriePlan}>
-            Add Calories Plan
-          </button>
-        </div>
+        {/* Your Plans List */}
+        <div style={{ marginTop: 24 }}>
+          <h3>Your Plans</h3>
 
-        <div style={{ marginTop: 18 }}>
-          <h3 style={{ marginBottom: 8 }}>Your Plans</h3>
           {plans.length === 0 ? (
-            <p>No plans yet.</p>
+            <p className={styles.subtle}>No plans yet.</p>
           ) : (
-            <ul style={{ paddingLeft: 18 }}>
+            <div className={styles.planList}>
               {plans.map((p) => (
-                <li key={p.id} style={{ marginBottom: 12 }}>
+                <div key={p.id} className={styles.planItem}>
                   <div>
-                    <strong>{p.name}</strong> — {p.type}
-                    {p.type === "CALORIE" ? ` (target ${p.config?.targetCalories})` : ""}
+                    <strong>{p.name}</strong>
+                    {p.type ? ` — ${p.type}` : ""}
+                    {p.config?.targetCalories ? ` (target ${p.config.targetCalories})` : ""}
                   </div>
-                  <button style={{ marginTop: 6, padding: 10 }} onClick={() => deletePlan(p.id)}>
+
+                  <button className={styles.buttonSecondary} onClick={() => deletePlan(p.id)}>
                     Delete
                   </button>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       </div>

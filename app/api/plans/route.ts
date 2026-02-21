@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "../../../lib/prisma";
+import { PlanType } from "@prisma/client";
 
 const COOKIE_NAME = "foodapp_session";
 
@@ -33,12 +34,61 @@ export async function GET(req: NextRequest) {
   }
 }
 
+function pickDietPlanType(): PlanType {
+  // If you added TEMPLATE (recommended), use it.
+  // Otherwise fall back to MEDITERRANEAN as a “generic diet plan” bucket.
+  // (This keeps your DB schema unchanged if you haven't updated PlanType yet.)
+  return (Object.values(PlanType) as string[]).includes("TEMPLATE")
+    ? ("TEMPLATE" as PlanType)
+    : ("MEDITERRANEAN" as PlanType);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const userId = readCookie(req.headers.get("cookie"), COOKIE_NAME);
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json().catch(() => null);
+
+    // -----------------------------
+    // NEW FLOW: templateSlug
+    // -----------------------------
+    const templateSlug = body?.templateSlug;
+
+    if (templateSlug && typeof templateSlug === "string") {
+      // Optional hard-block WW even if it exists in DB
+      if (templateSlug === "weightwatchers") {
+        return NextResponse.json({ error: "That template is disabled." }, { status: 400 });
+      }
+
+      const template = await prisma.planTemplate.findUnique({
+        where: { slug: templateSlug },
+        select: { slug: true, name: true, category: true },
+      });
+
+      if (!template) {
+        return NextResponse.json({ error: "Unknown templateSlug" }, { status: 400 });
+      }
+
+      const plan = await prisma.userPlan.create({
+        data: {
+          userId,
+          type: pickDietPlanType(),
+          name: template.name,
+          config: {
+            templateSlug: template.slug,
+            templateCategory: template.category,
+          },
+        },
+        select: { id: true, name: true, type: true, config: true, createdAt: true },
+      });
+
+      return NextResponse.json({ plan }, { status: 201 });
+    }
+
+    // -----------------------------
+    // OLD FLOW: type + name (+ config)
+    // -----------------------------
     const type = body?.type;
     const name = body?.name;
 
@@ -89,7 +139,10 @@ export async function DELETE(req: NextRequest) {
     const id = url.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-    const plan = await prisma.userPlan.findFirst({ where: { id, userId }, select: { id: true } });
+    const plan = await prisma.userPlan.findFirst({
+      where: { id, userId },
+      select: { id: true },
+    });
     if (!plan) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     await prisma.userPlan.delete({ where: { id } });
