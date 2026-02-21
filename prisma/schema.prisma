@@ -119,3 +119,28 @@ model PasswordResetToken {
   @@index([userId, createdAt])
   @@index([expiresAt])
 }
+
+enum PlanCategory {
+  COMPOSITION   // food-pattern (Mediterranean, Paleo, Vegan...)
+  MACRO         // macro targets (High-Protein, Low-Carb, Keto)
+  TIMING        // fasting / time windows
+  ELIMINATION   // Whole30 style
+  BEHAVIOR      // Volumetrics, High-Fiber
+  POINTS        // points-based
+  MEDICAL       // DASH, Low-Sodium, Diabetic-Friendly, Low-GI
+}
+
+model PlanTemplate {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  name        String
+  category    PlanCategory
+  description String?
+  isActive    Boolean      @default(true)
+
+  // scoring knobs / rules / defaults live here (future-ready)
+  config      Json?
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
