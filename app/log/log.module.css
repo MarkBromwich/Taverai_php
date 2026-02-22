@@ -935,3 +935,18 @@
   color: rgba(255,255,255,0.62);
   line-height: 1.25;
 }
+
+.setupNotice {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #374151;
+  margin-bottom: 18px;
+}
+
+.setupNotice ul {
+  margin-top: 6px;
+  padding-left: 18px;
+}

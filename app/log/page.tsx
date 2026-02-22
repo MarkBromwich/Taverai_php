@@ -123,10 +123,9 @@ export default function LogPage() {
   /* ---- helpers ---- */
 
   async function refreshEntriesForDay(dayKey: string) {
-    const refreshed = await fetch(
-      `/api/entries?date=${encodeURIComponent(dayKey)}`,
-      { cache: "no-store" }
-    );
+    const refreshed = await fetch(`/api/entries?date=${encodeURIComponent(dayKey)}`, {
+      cache: "no-store",
+    });
     const jj = await refreshed.json().catch(() => ({}));
     setEntries(Array.isArray(jj?.entries) ? jj.entries : []);
   }
@@ -161,9 +160,7 @@ export default function LogPage() {
         const j = await res.json().catch(() => ({}));
 
         const primary: Plan | null =
-          j?.primaryPlan ??
-          j?.plan ??
-          (Array.isArray(j?.plans) ? j.plans[0] : null);
+          j?.primaryPlan ?? j?.plan ?? (Array.isArray(j?.plans) ? j.plans[0] : null);
 
         if (!cancelled) {
           setPlanId(primary?.id ?? null);
@@ -209,8 +206,7 @@ export default function LogPage() {
   }, [ymd]);
 
   /* ---- Summary ---- */
-  const firstName =
-    (me?.firstName ?? "").trim() || me?.username?.split("@")[0] || "";
+  const firstName = (me?.firstName ?? "").trim() || me?.username?.split("@")[0] || "";
 
   const encouragement = useMemo(() => {
     return buildEncouragement(firstName, entries.length);
@@ -224,13 +220,7 @@ export default function LogPage() {
    */
   const todayCals = useMemo(() => {
     return entries.reduce((sum, e) => {
-      const v =
-        e.calories ??
-        e.parsed?.calories ??
-        e.parsed?.kcal ??
-        e.parsed?.nutrition?.calories ??
-        0;
-
+      const v = e.calories ?? e.parsed?.calories ?? e.parsed?.kcal ?? e.parsed?.nutrition?.calories ?? 0;
       const n = typeof v === "number" ? v : Number(v);
       return sum + (Number.isFinite(n) ? n : 0);
     }, 0);
@@ -239,12 +229,9 @@ export default function LogPage() {
   const macros = useMemo(() => {
     return entries.reduce(
       (acc, e) => {
-        const protein =
-          e.proteinG ?? e.parsed?.macros?.proteinG ?? e.parsed?.proteinG ?? 0;
-        const carbs =
-          e.carbsG ?? e.parsed?.macros?.carbsG ?? e.parsed?.carbsG ?? 0;
-        const fat =
-          e.fatG ?? e.parsed?.macros?.fatG ?? e.parsed?.fatG ?? 0;
+        const protein = e.proteinG ?? e.parsed?.macros?.proteinG ?? e.parsed?.proteinG ?? 0;
+        const carbs = e.carbsG ?? e.parsed?.macros?.carbsG ?? e.parsed?.carbsG ?? 0;
+        const fat = e.fatG ?? e.parsed?.macros?.fatG ?? e.parsed?.fatG ?? 0;
 
         const p = Number(protein);
         const c = Number(carbs);
@@ -271,6 +258,19 @@ export default function LogPage() {
     if (!scores.length) return null;
     return scores[0]; // newest-first
   }, [entries, planId]);
+
+  /* ------------------------------
+     ✅ Setup notices (each hides independently)
+  --------------------------------*/
+  const hasPlan = Boolean(planId);
+  const hasCalorieGoal = Boolean(me?.dailyCalorieGoal);
+  const hasEntries = entries.length > 0;
+
+  const showPlanMsg = !hasPlan;
+  const showGoalMsg = !hasCalorieGoal;
+  const showEntriesMsg = !hasEntries;
+
+  const showAnySetupMsg = showPlanMsg || showGoalMsg || showEntriesMsg;
 
   /* ---- Add food (existing controlled) ---- */
   const [newText, setNewText] = useState("");
@@ -370,71 +370,71 @@ export default function LogPage() {
   /* Submit meal Via Phtot Code is here */
 
   type MealScanResult = {
-  title: string;
-  calories: number | null;
-  proteinG: number | null;
-  carbsG: number | null;
-  fatG: number | null;
-  confidence?: number | null;
-  notes?: string | null;
-};
-
-async function submitMealPhoto(file: File): Promise<MealScanResult> {
-  const fd = new FormData();
-  fd.append("image", file);
-
-  const scanRes = await fetch("/api/meal/scan", {
-    method: "POST",
-    body: fd,
-  });
-
-  const scanJson = await scanRes.json().catch(() => ({}));
-  if (!scanRes.ok) throw new Error(scanJson?.error ?? "Meal scan failed");
-
-  const r = scanJson?.result ?? null;
-  if (!r) throw new Error("Meal scan returned no result");
-
-  // Return the draft (do NOT save here)
-  return {
-    title: String(r.title ?? "Scanned meal"),
-    calories: r.calories ?? null,
-    proteinG: r.proteinG ?? null,
-    carbsG: r.carbsG ?? null,
-    fatG: r.fatG ?? null,
-    confidence: r.confidence ?? null,
-    notes: r.notes ?? null,
+    title: string;
+    calories: number | null;
+    proteinG: number | null;
+    carbsG: number | null;
+    fatG: number | null;
+    confidence?: number | null;
+    notes?: string | null;
   };
-}
 
-async function saveScannedMeal(draft: MealScanResult) {
-  const saveRes = await fetch("/api/entries", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      text: draft.title,
-      date: ymd,
-      calories: draft.calories,
-      proteinG: draft.proteinG,
-      carbsG: draft.carbsG,
-      fatG: draft.fatG,
-      parsed: {
-        source: "mealPhoto",
-        confidence: draft.confidence ?? null,
-        notes: draft.notes ?? null,
-      },
-    }),
-  });
+  async function submitMealPhoto(file: File): Promise<MealScanResult> {
+    const fd = new FormData();
+    fd.append("image", file);
 
-  const saveJson = await saveRes.json().catch(() => ({}));
-  if (!saveRes.ok) throw new Error(saveJson?.error ?? "Failed to save meal entry");
+    const scanRes = await fetch("/api/meal/scan", {
+      method: "POST",
+      body: fd,
+    });
 
-  // refresh entries
-  const refreshed = await fetch(`/api/entries?date=${encodeURIComponent(ymd)}`, {
-    cache: "no-store",
-  });
-  const jj = await refreshed.json().catch(() => ({}));
-  setEntries(Array.isArray(jj?.entries) ? jj.entries : []);
-}
+    const scanJson = await scanRes.json().catch(() => ({}));
+    if (!scanRes.ok) throw new Error(scanJson?.error ?? "Meal scan failed");
+
+    const r = scanJson?.result ?? null;
+    if (!r) throw new Error("Meal scan returned no result");
+
+    // Return the draft (do NOT save here)
+    return {
+      title: String(r.title ?? "Scanned meal"),
+      calories: r.calories ?? null,
+      proteinG: r.proteinG ?? null,
+      carbsG: r.carbsG ?? null,
+      fatG: r.fatG ?? null,
+      confidence: r.confidence ?? null,
+      notes: r.notes ?? null,
+    };
+  }
+
+  async function saveScannedMeal(draft: MealScanResult) {
+    const saveRes = await fetch("/api/entries", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: draft.title,
+        date: ymd,
+        calories: draft.calories,
+        proteinG: draft.proteinG,
+        carbsG: draft.carbsG,
+        fatG: draft.fatG,
+        parsed: {
+          source: "mealPhoto",
+          confidence: draft.confidence ?? null,
+          notes: draft.notes ?? null,
+        },
+      }),
+    });
+
+    const saveJson = await saveRes.json().catch(() => ({}));
+    if (!saveRes.ok) throw new Error(saveJson?.error ?? "Failed to save meal entry");
+
+    // refresh entries
+    const refreshed = await fetch(`/api/entries?date=${encodeURIComponent(ymd)}`, {
+      cache: "no-store",
+    });
+    const jj = await refreshed.json().catch(() => ({}));
+    setEntries(Array.isArray(jj?.entries) ? jj.entries : []);
+  }
 
   // Display Of Page Is Here //
   return (
@@ -506,14 +506,46 @@ async function saveScannedMeal(draft: MealScanResult) {
         </div>
       </section>
 
+      {/* ✅ SETUP NOTICES (each hides independently) */}
+      {showAnySetupMsg && (
+        <div style={{ display: "grid", gap: 10, marginBottom: 18 }}>
+          {showPlanMsg && (
+            <section className={`${styles.card} ${styles.setupNotice}`}>
+              <div style={{ fontWeight: 900, marginBottom: 4 }}>Step 1: Choose a diet plan</div>
+              <div className={styles.muted}>
+                Go to <a href="/plans">Plans</a> and add/select a diet plan so your score gauge can calculate.
+              </div>
+            </section>
+          )}
+
+          {showGoalMsg && (
+            <section className={`${styles.card} ${styles.setupNotice}`}>
+              <div style={{ fontWeight: 900, marginBottom: 4 }}>Step 2: Set a calorie goal</div>
+              <div className={styles.muted}>
+                Set your daily goal in <a href="/plans">Plans</a> so the calorie gauge can compare against it.
+              </div>
+            </section>
+          )}
+
+          {showEntriesMsg && (
+            <section className={`${styles.card} ${styles.setupNotice}`}>
+              <div style={{ fontWeight: 900, marginBottom: 4 }}>Step 3: Log your first meal</div>
+              <div className={styles.muted}>
+                Add a meal below (text, barcode, or photo). Once you have at least one entry, the gauges will show data.
+              </div>
+            </section>
+          )}
+        </div>
+      )}
+
       {/* MAIN STACK */}
       <CaloriesCard
         me={
           me
             ? {
-              username: me.username,
-              dailyCalorieGoal: me.dailyCalorieGoal ?? null,
-            }
+                username: me.username,
+                dailyCalorieGoal: me.dailyCalorieGoal ?? null,
+              }
             : null
         }
         todayCals={todayCals}
@@ -530,9 +562,7 @@ async function saveScannedMeal(draft: MealScanResult) {
           <h2 className={styles.h2} style={{ margin: 0 }}>
             Add food
           </h2>
-          <span className={styles.small}>
-            {addMode === "quick" ? "Fast" : "Precise"}
-          </span>
+          <span className={styles.small}>{addMode === "quick" ? "Fast" : "Precise"}</span>
         </div>
 
         <div className={styles.muted} style={{ marginTop: 6 }}>
@@ -542,8 +572,7 @@ async function saveScannedMeal(draft: MealScanResult) {
         <div className={styles.btnRow} style={{ marginTop: 12 }}>
           <button
             type="button"
-            className={`${styles.btn} ${addMode === "quick" ? styles.btnPrimary : ""
-              }`}
+            className={`${styles.btn} ${addMode === "quick" ? styles.btnPrimary : ""}`}
             onClick={() => setAddMode("quick")}
           >
             Quick add
@@ -551,8 +580,7 @@ async function saveScannedMeal(draft: MealScanResult) {
 
           <button
             type="button"
-            className={`${styles.btn} ${addMode === "manual" ? styles.btnPrimary : ""
-              }`}
+            className={`${styles.btn} ${addMode === "manual" ? styles.btnPrimary : ""}`}
             onClick={() => setAddMode("manual")}
           >
             Manual nutrition
@@ -567,8 +595,8 @@ async function saveScannedMeal(draft: MealScanResult) {
               submitting={submitting}
               onSubmit={submitEntry}
               onBarcode={submitBarcode}
-              onMealPhoto={submitMealPhoto}        // returns draft
-              onSaveMealDraft={saveScannedMeal}    // saves entry + refresh
+              onMealPhoto={submitMealPhoto} // returns draft
+              onSaveMealDraft={saveScannedMeal} // saves entry + refresh
             />
           ) : (
             <div style={{ display: "grid", gap: 10 }}>
