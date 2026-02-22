@@ -937,13 +937,15 @@
 }
 
 .setupNotice {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  padding: 14px 16px;
   border-radius: 10px;
+  padding: 14px 16px;
   font-size: 14px;
+  font-weight: 900;
+  border: 1px solid var(--score-border, rgba(255,255,255,0.16));
+  background: var(--score-bg, rgba(255,255,255,0.06));
+  color: var(--score-color, var(--text));
+  font-weight: 700; 
   color: #374151;
-  margin-bottom: 18px;
 }
 
 .setupNotice ul {
