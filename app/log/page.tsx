@@ -367,7 +367,7 @@ export default function LogPage() {
     await refreshEntriesForDay(ymd);
   }
 
-  /* Submit meal Via Phtot Code is here */
+  /* Submit meal Via Photo Code is here */
 
   type MealScanResult = {
     title: string;
@@ -449,13 +449,7 @@ export default function LogPage() {
 
       {/* MOBILE DATE SCROLLER */}
       <section className={styles.card} style={{ marginBottom: 18 }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <button
             type="button"
             onClick={() => setYmd(addDays(ymd, -1))}
@@ -475,9 +469,7 @@ export default function LogPage() {
           </button>
 
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 20, fontWeight: 900 }}>
-              {friendlyDateLabel(ymd)}
-            </div>
+            <div style={{ fontSize: 20, fontWeight: 900 }}>{friendlyDateLabel(ymd)}</div>
             <div className={styles.muted}>{ymd}</div>
           </div>
 
@@ -506,36 +498,24 @@ export default function LogPage() {
         </div>
       </section>
 
-      {/* ✅ SETUP NOTICES (each hides independently) */}
+      {/* ✅ ONE CONTAINER SETUP NOTICE (items hide independently) */}
       {showAnySetupMsg && (
-        <div style={{ display: "grid", gap: 10, marginBottom: 18 }}>
-          {showPlanMsg && (
-            <section className={`${styles.card} ${styles.setupNotice}`}>
-              <div style={{ fontWeight: 900, marginBottom: 4 }}>Step 1: Choose a diet plan</div>
-              <div className={styles.muted}>
-                Go to <a href="/plans">Plans</a> and add/select a diet plan so your score gauge can calculate.
-              </div>
-            </section>
-          )}
-
-          {showGoalMsg && (
-            <section className={`${styles.card} ${styles.setupNotice}`}>
-              <div style={{ fontWeight: 900, marginBottom: 4 }}>Step 2: Set a calorie goal</div>
-              <div className={styles.muted}>
-                Set your daily goal in <a href="/plans">Plans</a> so the calorie gauge can compare against it.
-              </div>
-            </section>
-          )}
-
-          {showEntriesMsg && (
-            <section className={`${styles.card} ${styles.setupNotice}`}>
-              <div style={{ fontWeight: 900, marginBottom: 4 }}>Step 3: Log your first meal</div>
-              <div className={styles.muted}>
-                Add a meal below (text, barcode, or photo). Once you have at least one entry, the gauges will show data.
-              </div>
-            </section>
-          )}
-        </div>
+        <section className={`${styles.card} ${styles.setupNotice}`}>
+          <div style={{ fontWeight: 900, marginBottom: 6 }}>To unlock the gauges:</div>
+          <ul>
+            {showPlanMsg && (
+              <li>
+                Choose a diet plan in <a href="/plans">Plans</a>.
+              </li>
+            )}
+            {showGoalMsg && (
+              <li>
+                Set your daily calorie goal in <a href="/plans">Plans</a>.
+              </li>
+            )}
+            {showEntriesMsg && <li>Log at least one meal below (text, barcode, or photo).</li>}
+          </ul>
+        </section>
       )}
 
       {/* MAIN STACK */}
@@ -607,13 +587,7 @@ export default function LogPage() {
                 className={styles.input}
               />
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                  gap: 10,
-                }}
-              >
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
                 <input
                   value={nCalories}
                   onChange={(e) => setNCalories(e.target.value)}
@@ -644,12 +618,7 @@ export default function LogPage() {
                 />
               </div>
 
-              <button
-                type="button"
-                onClick={submitNutritionEntry}
-                disabled={nSubmitting}
-                className={styles.authBtn}
-              >
+              <button type="button" onClick={submitNutritionEntry} disabled={nSubmitting} className={styles.authBtn}>
                 {nSubmitting ? "Saving…" : "Save nutrition entry"}
               </button>
 
