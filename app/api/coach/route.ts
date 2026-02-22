@@ -1,4 +1,6 @@
+// app/api/coach/route.ts
 import { NextResponse } from "next/server";
+import OpenAI from "openai";
 
 type Plan = { id: string; name: string; type: string };
 type ScoreRow = {
@@ -55,7 +57,6 @@ function scoreForEntry(e: Entry, planId: string | null) {
 }
 
 function topFoods(entries: Entry[], limit = 6) {
-  // naive: count repeated phrases; good enough for MVP
   const counts = new Map<string, number>();
   for (const e of entries) {
     const t = (e.text || "").trim();
@@ -83,7 +84,7 @@ function summarize(entries: Entry[], horizonDays: number) {
     byDay.get(key)!.push(e);
   }
 
-  const keys = Array.from(byDay.keys()).sort(); // ascending
+  const keys = Array.from(byDay.keys()).sort();
   const dayScores: Array<{ key: string; score: number | null; cals: number }> = [];
 
   for (const k of keys) {
@@ -116,82 +117,44 @@ function summarize(entries: Entry[], horizonDays: number) {
 
   return {
     planName: plan?.name ?? null,
+    planType: plan?.type ?? null,
     planId,
-    recent,
     overallAvg,
     bestDay: bestDay ?? null,
     worstDay: worstDay ?? null,
     foods,
     dayScores,
     avgCalories: avg(calVals),
+    loggedDays: dayScores.length,
+    entryCount: recent.length,
   };
 }
 
-function buildCoachAnswer(questionRaw: string, summary: ReturnType<typeof summarize>) {
-  const q = (questionRaw || "").trim().toLowerCase();
+function getBaseUrl(req: Request) {
+  // Prefer your deployed URL if you set it, otherwise derive from request host
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (envUrl) return envUrl.replace(/\/$/, "");
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "localhost:3000";
+  const proto = req.headers.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
 
-  const lines: string[] = [];
-  lines.push(summary.planName ? `Plan: ${summary.planName}` : `Plan: (none selected)`);
-  lines.push("");
-
-  if (!summary.recent.length) {
-    lines.push("You don’t have any entries in the selected window yet.");
-    lines.push("Log a few meals and I’ll start spotting patterns and giving targeted swaps.");
-    return lines.join("\n");
-  }
-
-  // baseline snapshot
-  lines.push(`Last ${summary.dayScores.length} logged days:`);
-  lines.push(`• Avg score: ${summary.overallAvg ?? "—"}/100`);
-  lines.push(`• Avg calories: ${summary.avgCalories ?? "—"}`);
-  if (summary.bestDay) lines.push(`• Best day: ${summary.bestDay.key} (score ${summary.bestDay.score}/100)`);
-  if (summary.worstDay) lines.push(`• Tough day: ${summary.worstDay.key} (score ${summary.worstDay.score}/100)`);
-  lines.push("");
-
-  if (summary.foods.length) {
-    lines.push("Most repeated entries:");
-    for (const f of summary.foods) lines.push(`• ${f.text} (${f.n}×)`);
-    lines.push("");
-  }
-
-  // question intents
-  if (q.includes("why") && (q.includes("low") || q.includes("bad") || q.includes("drop"))) {
-    lines.push("Why scores may have dipped:");
-    lines.push("• Check your “tough day” and compare it to your best day — what foods differ?");
-    lines.push("• If your plan score has reasons/breakdown, we can surface the top reasons next.");
-    lines.push("");
-    lines.push("Try this:");
-    lines.push("• Log one simple “anchor meal” you know fits your plan (lean protein + veg + healthy fat).");
-    lines.push("• Keep snacks simple (fruit, yogurt, nuts) to avoid a late-day score collapse.");
-    return lines.join("\n");
-  }
-
-  if (q.includes("swap") || q.includes("replace") || q.includes("on track") || q.includes("get back")) {
-    lines.push("3 easy ‘get back on track’ swaps (based on typical patterns):");
-    lines.push("• If you often log bread/pasta → swap one meal to salad + olive oil + protein.");
-    lines.push("• If you often log cookies/chips → swap to fruit + yogurt or nuts.");
-    lines.push("• If dinners are heavy → do a lighter dinner and a stronger breakfast tomorrow.");
-    lines.push("");
-    lines.push("If you tell me what meal is hardest (breakfast/lunch/dinner), I’ll narrow this down.");
-    return lines.join("\n");
-  }
-
-  if (q.includes("best") || q.includes("what worked") || q.includes("help")) {
-    lines.push("What seems to work (based on your history):");
-    if (summary.bestDay) {
-      lines.push(`• Your best day was ${summary.bestDay.key}. Look at what you logged that day and repeat it once this week.`);
-    }
-    lines.push("• Repeat your top high-quality foods (lean protein, veggies, olive oil, fruit).");
-    lines.push("• Keep ultra-processed snacks from stacking up late in the day.");
-    return lines.join("\n");
-  }
-
-  // default
-  lines.push("Ask me something like:");
-  lines.push("• “Why was my score low this week?”");
-  lines.push("• “What 3 swaps fit my history?”");
-  lines.push("• “What foods help my plan the most?”");
-  return lines.join("\n");
+function coachSystemPrompt() {
+  return [
+    "You are Taverai Coach: supportive, practical, and concise.",
+    "Your job: analyze the user's recent nutrition log summary and answer their question.",
+    "Output format MUST be plain text with these sections:",
+    "1) Snapshot (2 bullets max)",
+    "2) What to do next (3 bullets max, specific and doable)",
+    "3) One simple swap (1 bullet)",
+    "4) Encouragement (1 short sentence)",
+    "",
+    "Rules:",
+    "- Do not mention being an AI.",
+    "- Do not ask more than one follow-up question. (Prefer none.)",
+    "- If the user has no logged days, tell them exactly what to log next and keep it motivating.",
+    "- Keep it 'blended': a little motivational + tactical + data-aware.",
+  ].join("\n");
 }
 
 export async function POST(req: Request) {
@@ -204,24 +167,78 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing question" }, { status: 400 });
     }
 
-    // Pull entries from your existing API route by internal fetch:
-    // NOTE: This assumes /api/entries exists and returns { entries: [...] }.
-    // If you prefer direct DB access here later, we can do that too.
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    // ✅ IMPORTANT FIX:
+    // Forward the cookie so /api/entries sees the logged-in user on Render.
+    const cookie = req.headers.get("cookie") ?? "";
+    const baseUrl = getBaseUrl(req);
 
-    const res = await fetch(`${baseUrl}/api/entries`, { cache: "no-store" });
+    const res = await fetch(`${baseUrl}/api/entries?horizonDays=${encodeURIComponent(String(horizonDays))}`, {
+      cache: "no-store",
+      headers: { cookie },
+    });
+
     const j = await res.json().catch(() => ({}));
     const entries: Entry[] = Array.isArray(j?.entries) ? j.entries : [];
 
     const summary = summarize(entries, horizonDays);
-    const answer = buildCoachAnswer(question, summary);
 
+    // If there’s truly no data, don’t waste tokens.
+    if (!summary.loggedDays) {
+      const answer =
+        `Plan: ${summary.planName ?? "(none selected)"}\n\n` +
+        `Snapshot:\n• No logged meals in the last ${horizonDays} days.\n\n` +
+        `What to do next:\n• Log your next meal (photo or text) with a short description.\n• Log one snack today.\n• Come back and ask “What should I improve first?”\n\n` +
+        `One simple swap:\n• Swap one sugary drink/snack for water + fruit.\n\n` +
+        `Encouragement:\nYou’re one log away from making this useful.`;
+      return NextResponse.json({ answer });
+    }
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    const model = process.env.OPENAI_COACH_MODEL || process.env.OPENAI_MEAL_MODEL || "gpt-4.1-mini";
+
+    const input = [
+      { role: "system", content: coachSystemPrompt() },
+      {
+        role: "user",
+        content: [
+          `QUESTION:\n${question}`,
+          ``,
+          `SUMMARY (last ${horizonDays} days):`,
+          JSON.stringify(
+            {
+              planName: summary.planName,
+              planType: summary.planType,
+              loggedDays: summary.loggedDays,
+              entryCount: summary.entryCount,
+              overallAvg: summary.overallAvg,
+              avgCalories: summary.avgCalories,
+              bestDay: summary.bestDay,
+              worstDay: summary.worstDay,
+              foods: summary.foods,
+              dayScores: summary.dayScores,
+            },
+            null,
+            2
+          ),
+        ].join("\n"),
+      },
+    ];
+
+    // Using Responses API (works with modern openai js)
+    const r = await openai.responses.create({
+      model,
+      input,
+      max_output_tokens: 450,
+    });
+
+    const answer = (r.output_text ?? "").trim() || "I couldn’t generate coaching text right now.";
     return NextResponse.json({ answer });
   } catch (err: any) {
     return NextResponse.json(
-      { error: String(err?.message ?? err ?? "Unknown error") },
+      { error: "Coach crashed", detail: String(err?.message ?? err ?? "Unknown error") },
       { status: 500 }
     );
   }
