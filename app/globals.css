@@ -1,4 +1,6 @@
-/* Taverai Global Brand System */
+/* ==============================
+   Taverai Global Brand System
+   ============================== */
 
 :root {
   /* Core brand */
@@ -35,6 +37,9 @@
 
   --radius: 18px;
   --shadow: 0 20px 45px rgba(0,0,0,0.45);
+
+  /* Bottom nav height (single source of truth) */
+  --bottom-nav-h: 84px;
 }
 
 * {
@@ -52,7 +57,10 @@ body {
   background: transparent;
 }
 
-/* Fixed cinematic background */
+/* ==============================
+   Cinematic Background
+   ============================== */
+
 body::before {
   content: "";
   position: fixed;
@@ -74,34 +82,6 @@ a {
   background: rgba(118,199,192,0.25);
 }
 
-@media (max-width: 860px) {
-  body {
-    padding-bottom: calc(76px + env(safe-area-inset-bottom));
-  }
-}
-
-/* =========================
-   APP SHELL LAYOUT
-   ========================= */
-
-.appShell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.appMain {
-  flex: 1;
-  padding: 20px 0;
-}
-
-/* Prevent content from hiding behind bottom nav */
-@media (max-width: 860px) {
-  body {
-    padding-bottom: calc(80px + env(safe-area-inset-bottom));
-  }
-}
-
 /* =========================
    APP SHELL LAYOUT
    ========================= */
@@ -115,9 +95,20 @@ a {
 .appMain {
   flex: 1;
   padding: 18px 0;
+  padding-bottom: 18px; /* desktop default */
 }
 
-/* Route transition (app-like) */
+/* Prevent content from hiding behind mobile bottom nav */
+@media (max-width: 860px) {
+  .appMain {
+    padding-bottom: calc(var(--bottom-nav-h) + 18px + env(safe-area-inset-bottom));
+  }
+}
+
+/* =========================
+   Route transition (app-like)
+   ========================= */
+
 .routeFade {
   animation: routeFadeIn 180ms ease-out;
   will-change: transform, opacity;
@@ -134,21 +125,14 @@ a {
   }
 }
 
-/* Prevent content from hiding behind mobile bottom nav */
-@media (max-width: 860px) {
-  body {
-    padding-bottom: calc(84px + env(safe-area-inset-bottom));
-  }
-}
-
 /* Better tap behavior on mobile */
 a, button {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* =====================================
+/* =========================
    Auth Button (Login / Signup)
-   ===================================== */
+   ========================= */
 
 .authBtn {
   width: 100%;
@@ -194,4 +178,14 @@ a, button {
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
+}
+
+/* =========================
+   Hide top bar on small screens
+   ========================= */
+
+@media (max-width: 768px) {
+  .topBar {
+    display: none;
+  }
 }

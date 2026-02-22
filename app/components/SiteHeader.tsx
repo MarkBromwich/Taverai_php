@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { BookOpen, Brain, ClipboardList } from "lucide-react";
+import { BookOpen, Brain, ClipboardList, User } from "lucide-react";
 import styles from "./shell.module.css";
 
 type NavItem = {
@@ -26,10 +26,10 @@ export default function SiteHeader() {
   const pathname = usePathname();
 
   return (
-    <header className={styles.header}>
+    <header className={`${styles.header} topBar`}>
       <div className={styles.shell}>
         <div className={styles.headerRow}>
-          
+
           {/* Brand */}
           <Link href="/log" className={styles.brand} aria-label="Go to log">
             <span className={styles.logoWrap} aria-hidden="true">
@@ -59,9 +59,8 @@ export default function SiteHeader() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`${styles.navLink} ${
-                      active ? styles.navLinkActive : ""
-                    }`}
+                    className={`${styles.navLink} ${active ? styles.navLinkActive : ""
+                      }`}
                   >
                     <span className={styles.navIcon}>{item.icon}</span>
                     <span className={styles.navText}>{item.label}</span>
@@ -70,13 +69,14 @@ export default function SiteHeader() {
               })}
             </nav>
 
-            {/* Account Avatar */}
+            {/* You */}
             <Link
               href="/account"
-              className={styles.headerAvatar}
-              aria-label="Account"
+              className={`${styles.navLink} ${pathname === "/account" ? styles.navLinkActive : ""
+                }`}
             >
-              <span className={styles.headerAvatarInner}>U</span>
+              <User size={20} />
+              <span className={styles.navText}>You</span>
             </Link>
           </div>
         </div>
