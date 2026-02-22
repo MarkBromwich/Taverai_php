@@ -321,6 +321,130 @@ export default function CoachPage() {
     });
   }, [byDay, last7Keys]);
 
+  // =========================
+  // NEW: small insights between sections
+  // =========================
+  function trendInsight(
+    scoreVals: Array<number | null>,
+    calVals: Array<number | null>,
+    goal: number | null
+  ) {
+    const scores = scoreVals.filter((x): x is number => typeof x === "number");
+    const cals = calVals.filter((x): x is number => typeof x === "number");
+
+    if (scores.length < 2) return "Log a few more days and I’ll summarize your trend.";
+
+    const first = scores[0];
+    const last = scores[scores.length - 1];
+    const delta = last - first;
+
+    const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+    const variance = scores.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / scores.length;
+    const std = Math.sqrt(variance);
+
+    const direction =
+      Math.abs(delta) < 3 ? "pretty steady" : delta > 0 ? "trending up" : "trending down";
+
+    const steadiness =
+      std < 8 ? "and very consistent" : std < 14 ? "with some normal swings" : "with bigger day-to-day swings";
+
+    let calLine = "";
+    if (cals.length) {
+      const calAvg = Math.round(cals.reduce((a, b) => a + b, 0) / cals.length);
+      if (goal) {
+        const diff = calAvg - goal;
+        calLine =
+          Math.abs(diff) <= 150
+            ? " Calories look close to your goal on average."
+            : diff > 0
+            ? " Calories are running a bit above your goal on average."
+            : " Calories are running a bit below your goal on average.";
+      } else {
+        calLine = ` Average calories are about ${calAvg}/day on logged days.`;
+      }
+    }
+
+    return `Over the last 7 days your score is ${direction} (${Math.round(first)} → ${Math.round(last)}) ${steadiness}.${calLine}`;
+  }
+
+  function foodMixInsight(
+    rows: Array<{ fruit: number; veg: number; carbs: number; fats: number; sum: number }>
+  ) {
+    const active = rows.filter((r) => r.sum > 0);
+    if (!active.length) return "Log a few meals and I’ll summarize your food-group pattern.";
+
+    const totals = active.reduce(
+      (a, r) => ({
+        fruit: a.fruit + r.fruit,
+        veg: a.veg + r.veg,
+        carbs: a.carbs + r.carbs,
+        fats: a.fats + r.fats,
+        sum: a.sum + r.sum,
+      }),
+      { fruit: 0, veg: 0, carbs: 0, fats: 0, sum: 0 }
+    );
+
+    const pct = (n: number) => Math.round((n / (totals.sum || 1)) * 100);
+    const pFruit = pct(totals.fruit);
+    const pVeg = pct(totals.veg);
+    const pCarbs = pct(totals.carbs);
+    const pFats = Math.max(0, 100 - pFruit - pVeg - pCarbs);
+
+const pairs: Array<[string, number]> = [
+  ["fruit", pFruit],
+  ["veg", pVeg],
+  ["carbs", pCarbs],
+  ["fats", pFats],
+];
+
+const sortedPairs = [...pairs].sort((a, b) => b[1] - a[1]);
+
+const top = sortedPairs[0];
+const bottom = sortedPairs[sortedPairs.length - 1];
+
+    const pretty = (k: string) => (k === "veg" ? "veg" : k);
+
+    let changeLine = "";
+    if (active.length >= 4) {
+      const mid = Math.floor(active.length / 2);
+      const firstHalf = active.slice(0, mid);
+      const secondHalf = active.slice(mid);
+
+      const sumHalf = (arr: typeof active) =>
+        arr.reduce(
+          (a, r) => ({
+            fruit: a.fruit + r.fruit,
+            veg: a.veg + r.veg,
+            carbs: a.carbs + r.carbs,
+            fats: a.fats + r.fats,
+            sum: a.sum + r.sum,
+          }),
+          { fruit: 0, veg: 0, carbs: 0, fats: 0, sum: 0 }
+        );
+
+      const a = sumHalf(firstHalf);
+      const b = sumHalf(secondHalf);
+      const vegA = a.sum ? a.veg / a.sum : 0;
+      const vegB = b.sum ? b.veg / b.sum : 0;
+      const vegDelta = vegB - vegA;
+
+      if (Math.abs(vegDelta) >= 0.08) {
+        changeLine = vegDelta > 0 ? " Veg intake looks to be improving over the week." : " Veg intake looks to be slipping later in the week.";
+      } else {
+        changeLine = " Your mix is fairly consistent across the week.";
+      }
+    }
+
+    return `Your logged mix is mostly ${pretty(top[0])} (~${top[1]}%). Least represented is ${pretty(bottom[0])} (~${bottom[1]}%).${changeLine}`;
+  }
+
+  const trendSummaryText = useMemo(
+    () => trendInsight(series7.scoreVals, series7.calVals, me?.dailyCalorieGoal ?? null),
+    [series7.scoreVals, series7.calVals, me?.dailyCalorieGoal]
+  );
+
+  const foodSummaryText = useMemo(() => foodMixInsight(breakdown7), [breakdown7]);
+
   async function askCoach() {
     const q = question.trim();
     if (!q) return;
@@ -368,7 +492,9 @@ export default function CoachPage() {
           <div className={styles.cardHead}>
             <div>
               <div className={styles.cardTitle}>Weekly trend</div>
-              <div className={styles.cardMeta}>Last 7 days ({last7Keys[0]} → {last7Keys[last7Keys.length - 1]})</div>
+              <div className={styles.cardMeta}>
+                Last 7 days ({last7Keys[0]} → {last7Keys[last7Keys.length - 1]})
+              </div>
             </div>
             <div className={styles.pills}>
               <span className={styles.pill}>Score</span>
@@ -421,6 +547,11 @@ export default function CoachPage() {
           </div>
         </section>
 
+        {/* NEW: between Trend and Breakdown */}
+        <div className={styles.note}>
+          <strong>Trend insight:</strong> {trendSummaryText}
+        </div>
+
         {/* Breakdown */}
         <section className={styles.card}>
           <div className={styles.cardHead}>
@@ -461,7 +592,9 @@ export default function CoachPage() {
                     <div className={`${styles.seg} ${styles.segFats}`} style={{ width: `${fatsP}%` }} />
                   </div>
 
-                  <div className={styles.breakdownNums}>{d.sum === 0 ? "—" : `F${d.fruit} V${d.veg} C${d.carbs} Fa${d.fats}`}</div>
+                  <div className={styles.breakdownNums}>
+                    {d.sum === 0 ? "—" : `F${d.fruit} V${d.veg} C${d.carbs} Fa${d.fats}`}
+                  </div>
                 </div>
               );
             })}
@@ -471,6 +604,11 @@ export default function CoachPage() {
             Next upgrade: replace this with USDA-derived grams (carbs/fat/fiber) once your parsed items include nutrients.
           </div>
         </section>
+
+        {/* NEW: between Breakdown and Ask Coach */}
+        <div className={styles.note}>
+          <strong>Food mix insight:</strong> {foodSummaryText}
+        </div>
 
         {/* Q&A */}
         <section className={styles.card}>
@@ -503,7 +641,11 @@ export default function CoachPage() {
           </div>
 
           <div className={styles.btnRow}>
-            <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={askCoach} disabled={asking || !question.trim()}>
+            <button
+              className={`${styles.btn} ${styles.btnPrimary}`}
+              onClick={askCoach}
+              disabled={asking || !question.trim()}
+            >
               {asking ? "Thinking…" : "Ask"}
             </button>
             <button
