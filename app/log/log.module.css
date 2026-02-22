@@ -937,17 +937,18 @@
 }
 
 .setupNotice {
-  border-radius: 10px;
+  border-radius: 16px; /* match your card radius */
   padding: 14px 16px;
   font-size: 14px;
-  font-weight: 900;
-  border: 1px solid var(--score-border, rgba(255,255,255,0.16));
-  background: var(--score-bg, rgba(255,255,255,0.06));
-  color: var(--score-color, var(--text));
-  font-weight: 700; 
-  color: #374151;
+  font-weight: 600;
+
+  /* Match existing card styling */
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
 }
 
+/* Keep list spacing clean */
 .setupNotice ul {
   margin-top: 6px;
   padding-left: 18px;
