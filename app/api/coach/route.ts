@@ -71,7 +71,9 @@ function topFoods(entries: Entry[], limit = 6) {
 
 function summarize(entries: Entry[], horizonDays: number) {
   const now = new Date();
-  const cutoff = startOfLocalDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - (horizonDays - 1)));
+  const cutoff = startOfLocalDay(
+    new Date(now.getFullYear(), now.getMonth(), now.getDate() - (horizonDays - 1))
+  );
 
   const recent = entries.filter((e) => new Date(e.createdAt) >= cutoff);
   const plan = pickPrimaryPlan(recent);
@@ -131,7 +133,6 @@ function summarize(entries: Entry[], horizonDays: number) {
 }
 
 function getBaseUrl(req: Request) {
-  // Prefer your deployed URL if you set it, otherwise derive from request host
   const envUrl = process.env.NEXT_PUBLIC_APP_URL;
   if (envUrl) return envUrl.replace(/\/$/, "");
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "localhost:3000";
@@ -167,8 +168,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing question" }, { status: 400 });
     }
 
-    // ✅ IMPORTANT FIX:
-    // Forward the cookie so /api/entries sees the logged-in user on Render.
+    // ✅ Forward the cookie so /api/entries sees the logged-in user on Render.
     const cookie = req.headers.get("cookie") ?? "";
     const baseUrl = getBaseUrl(req);
 
@@ -199,38 +199,33 @@ export async function POST(req: Request) {
 
     const model = process.env.OPENAI_COACH_MODEL || process.env.OPENAI_MEAL_MODEL || "gpt-4.1-mini";
 
-    const input = [
-      { role: "system", content: coachSystemPrompt() },
-      {
-        role: "user",
-        content: [
-          `QUESTION:\n${question}`,
-          ``,
-          `SUMMARY (last ${horizonDays} days):`,
-          JSON.stringify(
-            {
-              planName: summary.planName,
-              planType: summary.planType,
-              loggedDays: summary.loggedDays,
-              entryCount: summary.entryCount,
-              overallAvg: summary.overallAvg,
-              avgCalories: summary.avgCalories,
-              bestDay: summary.bestDay,
-              worstDay: summary.worstDay,
-              foods: summary.foods,
-              dayScores: summary.dayScores,
-            },
-            null,
-            2
-          ),
-        ].join("\n"),
-      },
-    ];
+    // ✅ FIX: Responses API wants STRING input. Put system in `instructions`, user in `input`.
+    const userPrompt = [
+      `QUESTION:\n${question}`,
+      ``,
+      `SUMMARY (last ${horizonDays} days):`,
+      JSON.stringify(
+        {
+          planName: summary.planName,
+          planType: summary.planType,
+          loggedDays: summary.loggedDays,
+          entryCount: summary.entryCount,
+          overallAvg: summary.overallAvg,
+          avgCalories: summary.avgCalories,
+          bestDay: summary.bestDay,
+          worstDay: summary.worstDay,
+          foods: summary.foods,
+          dayScores: summary.dayScores,
+        },
+        null,
+        2
+      ),
+    ].join("\n");
 
-    // Using Responses API (works with modern openai js)
     const r = await openai.responses.create({
       model,
-      input,
+      instructions: coachSystemPrompt(),
+      input: userPrompt,
       max_output_tokens: 450,
     });
 
