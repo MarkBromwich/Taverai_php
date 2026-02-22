@@ -402,7 +402,11 @@ export default function CoachPage() {
               <Sparkline
                 values={series7.calVals}
                 min={0}
-                max={Math.max(500, ...(series7.calVals.filter((x): x is number => typeof x === "number") as number[]), me?.dailyCalorieGoal ?? 0)}
+                max={Math.max(
+                  500,
+                  ...(series7.calVals.filter((x): x is number => typeof x === "number") as number[]),
+                  me?.dailyCalorieGoal ?? 0
+                )}
               />
               <div className={styles.xLabels}>
                 {last7Keys.map((k) => (
@@ -457,9 +461,7 @@ export default function CoachPage() {
                     <div className={`${styles.seg} ${styles.segFats}`} style={{ width: `${fatsP}%` }} />
                   </div>
 
-                  <div className={styles.breakdownNums}>
-                    {d.sum === 0 ? "—" : `F${d.fruit} V${d.veg} C${d.carbs} Fa${d.fats}`}
-                  </div>
+                  <div className={styles.breakdownNums}>{d.sum === 0 ? "—" : `F${d.fruit} V${d.veg} C${d.carbs} Fa${d.fats}`}</div>
                 </div>
               );
             })}
@@ -472,6 +474,14 @@ export default function CoachPage() {
 
         {/* Q&A */}
         <section className={styles.card}>
+          {/* ✅ Put answer FIRST so users see it immediately */}
+          {answer && (
+            <div className={styles.answerBox}>
+              <div className={styles.answerTitle}>Coach response</div>
+              <div className={styles.answerText}>{answer}</div>
+            </div>
+          )}
+
           <div className={styles.cardHead}>
             <div>
               <div className={styles.cardTitle}>Ask Coach</div>
@@ -496,17 +506,17 @@ export default function CoachPage() {
             <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={askCoach} disabled={asking || !question.trim()}>
               {asking ? "Thinking…" : "Ask"}
             </button>
-            <button className={`${styles.btn} ${styles.btnGhost}`} onClick={() => { setQuestion(""); setAnswer(null); }} disabled={asking}>
+            <button
+              className={`${styles.btn} ${styles.btnGhost}`}
+              onClick={() => {
+                setQuestion("");
+                setAnswer(null);
+              }}
+              disabled={asking}
+            >
               Clear
             </button>
           </div>
-
-          {answer && (
-            <div className={styles.answerBox}>
-              <div className={styles.answerTitle}>Coach response</div>
-              <div className={styles.answerText}>{answer}</div>
-            </div>
-          )}
         </section>
       </div>
 
