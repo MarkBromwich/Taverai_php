@@ -1,8 +1,8 @@
-// app/api/meal/scan/route.ts
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
-export const runtime = "nodejs";
+export const runtime = "nodejs"; // IMPORTANT on Render
+export const dynamic = "force-dynamic";
 
 export type MealScanResult = {
   title: string;
@@ -16,8 +16,8 @@ export type MealScanResult = {
   items: Array<{ name: string; confidence: number | null }> | null;
 };
 
-function toNumOrNull(v: any): number | null {
-  const n = typeof v === "number" ? v : Number(v);
+function numOrNull(v: any) {
+  const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
 
@@ -26,34 +26,39 @@ export async function POST(req: Request) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "Missing OPENAI_API_KEY (set it in Render Environment Variables)" },
+        { error: "Server missing OPENAI_API_KEY" },
         { status: 500 }
       );
     }
 
-    const formData = await req.formData();
-    const file = formData.get("image");
-
-    if (!file || !(file instanceof File)) {
-      return NextResponse.json({ error: "Image file is required" }, { status: 400 });
-    }
-
     const openai = new OpenAI({ apiKey });
 
-    // Convert image to base64 data URL
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const formData = await req.formData();
+    const imagePart = formData.get("image");
+
+    // Accept File OR Blob (some clients/runtimes give Blob)
+    if (!imagePart || typeof (imagePart as any).arrayBuffer !== "function") {
+      return NextResponse.json(
+        { error: "Image file is required (field name: image)" },
+        { status: 400 }
+      );
+    }
+
+    const blob = imagePart as Blob;
+    const mime = (blob as any).type || "image/jpeg";
+
+    // Convert image to base64
+    const buffer = Buffer.from(await blob.arrayBuffer());
     const base64 = buffer.toString("base64");
-    const dataUrl = `data:${file.type};base64,${base64}`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
+      model: "gpt-4o-mini",
       response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
           content:
-            "You are a nutrition estimation AI. Return ONLY valid JSON. " +
-            "Estimate calories and macros for the entire plate. Be conservative. No explanations.",
+            "You are a nutrition estimation AI. Return ONLY valid JSON. Estimate realistic calories and macros for the entire plate. Be conservative and reasonable. Do not explain anything.",
         },
         {
           role: "user",
@@ -70,14 +75,19 @@ export async function POST(req: Request) {
   "fatG": number,
   "confidence": number,
   "notes": string,
-  "items": [{ "name": string, "confidence": number }]
+  "items": [
+    { "name": string, "confidence": number }
+  ]
 }
 
-Title should be descriptive but concise.
+Make the title descriptive but concise.
 Return totals for the entire meal.
-Confidence must be 0–1.`,
+Confidence should be 0–1.`,
             },
-            { type: "image_url", image_url: { url: dataUrl } },
+            {
+              type: "image_url",
+              image_url: { url: `data:${mime};base64,${base64}` },
+            },
           ],
         },
       ],
@@ -93,24 +103,22 @@ Confidence must be 0–1.`,
     }
 
     const result: MealScanResult = {
-      title: typeof parsed.title === "string" && parsed.title.trim() ? parsed.title.trim() : "Meal",
-      calories: toNumOrNull(parsed.calories),
-      proteinG: toNumOrNull(parsed.proteinG),
-      carbsG: toNumOrNull(parsed.carbsG),
-      fatG: toNumOrNull(parsed.fatG),
+      title: parsed.title ?? "Meal",
+      calories: numOrNull(parsed.calories),
+      proteinG: numOrNull(parsed.proteinG),
+      carbsG: numOrNull(parsed.carbsG),
+      fatG: numOrNull(parsed.fatG),
       confidence: typeof parsed.confidence === "number" ? parsed.confidence : null,
-      notes: typeof parsed.notes === "string" ? parsed.notes : null,
+      notes: parsed.notes ?? null,
       source: "mealPhoto",
-      items: Array.isArray(parsed.items)
-        ? parsed.items.map((it: any) => ({
-            name: String(it?.name ?? "").trim() || "Item",
-            confidence: typeof it?.confidence === "number" ? it.confidence : null,
-          }))
-        : null,
+      items: Array.isArray(parsed.items) ? parsed.items : null,
     };
 
     return NextResponse.json({ result });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? "Meal scan failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: err?.message ?? "Meal scan failed" },
+      { status: 500 }
+    );
   }
 }
