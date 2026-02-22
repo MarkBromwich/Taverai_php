@@ -1,20 +1,8 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
-export const runtime = "nodejs"; // IMPORTANT on Render
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-export type MealScanResult = {
-  title: string;
-  calories: number | null;
-  proteinG: number | null;
-  carbsG: number | null;
-  fatG: number | null;
-  confidence: number | null;
-  notes: string | null;
-  source: "mealPhoto";
-  items: Array<{ name: string; confidence: number | null }> | null;
-};
 
 function numOrNull(v: any) {
   const n = Number(v);
@@ -31,12 +19,13 @@ export async function POST(req: Request) {
       );
     }
 
+    const model = process.env.OPENAI_MEAL_MODEL || "gpt-4o-mini";
     const openai = new OpenAI({ apiKey });
 
     const formData = await req.formData();
     const imagePart = formData.get("image");
 
-    // Accept File OR Blob (some clients/runtimes give Blob)
+    // Accept File OR Blob (avoid brittle instanceof checks)
     if (!imagePart || typeof (imagePart as any).arrayBuffer !== "function") {
       return NextResponse.json(
         { error: "Image file is required (field name: image)" },
@@ -47,12 +36,11 @@ export async function POST(req: Request) {
     const blob = imagePart as Blob;
     const mime = (blob as any).type || "image/jpeg";
 
-    // Convert image to base64
     const buffer = Buffer.from(await blob.arrayBuffer());
     const base64 = buffer.toString("base64");
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model,
       response_format: { type: "json_object" },
       messages: [
         {
@@ -80,9 +68,7 @@ export async function POST(req: Request) {
   ]
 }
 
-Make the title descriptive but concise.
-Return totals for the entire meal.
-Confidence should be 0–1.`,
+Return totals for the entire meal. Confidence is 0–1.`,
             },
             {
               type: "image_url",
@@ -94,7 +80,6 @@ Confidence should be 0–1.`,
     });
 
     const raw = response.choices[0]?.message?.content ?? "{}";
-
     let parsed: any = {};
     try {
       parsed = JSON.parse(raw);
@@ -102,7 +87,7 @@ Confidence should be 0–1.`,
       parsed = {};
     }
 
-    const result: MealScanResult = {
+    const result = {
       title: parsed.title ?? "Meal",
       calories: numOrNull(parsed.calories),
       proteinG: numOrNull(parsed.proteinG),
@@ -110,14 +95,22 @@ Confidence should be 0–1.`,
       fatG: numOrNull(parsed.fatG),
       confidence: typeof parsed.confidence === "number" ? parsed.confidence : null,
       notes: parsed.notes ?? null,
-      source: "mealPhoto",
       items: Array.isArray(parsed.items) ? parsed.items : null,
+      source: "mealPhoto" as const,
     };
 
     return NextResponse.json({ result });
   } catch (err: any) {
+    // This makes the Network tab actually useful on Render.
+    const detail =
+      err?.response?.data
+        ? JSON.stringify(err.response.data)
+        : String(err?.stack ?? err?.message ?? err);
+
+    console.error("MEAL_SCAN_ERROR:", detail);
+
     return NextResponse.json(
-      { error: err?.message ?? "Meal scan failed" },
+      { error: "Meal scan failed", detail },
       { status: 500 }
     );
   }
