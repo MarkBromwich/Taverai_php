@@ -30,12 +30,21 @@
 }
 
 .card {
+  margin-top: 14px;
+  padding: 18px;
+
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: var(--shadow-sm);
-  padding: 18px;
-  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: 0 26px 55px rgba(0,0,0,0.55);
 }
 
 .cardHead {
@@ -271,13 +280,17 @@
 .btnRow {
   display: flex;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   margin-top: 12px;
+}
+
+.btnRow > button {
+  flex: 1;
 }
 
 .btn {
   appearance: none;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   padding: 10px 14px;
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.06);
@@ -285,6 +298,13 @@
   font-size: 14px;
   font-weight: 900;
   color: var(--text);
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 .btnPrimary {
@@ -301,14 +321,6 @@
   cursor: not-allowed;
 }
 
-.answerBox {
-  margin-top: 14px;
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: var(--radius-sm);
-  background: rgba(255,255,255,0.05);
-  padding: 12px;
-}
-
 .answerTitle {
   font-size: 12px;
   font-weight: 900;
@@ -321,6 +333,14 @@
   line-height: 1.55;
   white-space: pre-wrap;
   color: var(--text);
+}
+
+.insightBox {
+  margin-top: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.04);
+  padding: 12px;
 }
 
 .note {

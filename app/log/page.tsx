@@ -24,6 +24,10 @@ export type Entry = {
   }>;
 };
 
+type EntryForStreak = {
+  createdAt: string;
+};
+
 type MeUser = {
   id: string;
   username: string;
@@ -100,6 +104,29 @@ function toNumOrEmpty(v: string) {
   return Number.isFinite(n) ? n : null;
 }
 
+function computeLoggingStreak(entries: EntryForStreak[]) {
+  if (!entries.length) return 0;
+
+  const dayKeys = new Set(
+    entries
+      .map((e) => {
+        const d = new Date(e.createdAt);
+        return Number.isFinite(d.getTime()) ? d.toISOString().slice(0, 10) : null;
+      })
+      .filter((k): k is string => Boolean(k))
+  );
+
+  let streak = 0;
+  let cursor = toYMD(new Date());
+
+  while (dayKeys.has(cursor)) {
+    streak += 1;
+    cursor = addDays(cursor, -1);
+  }
+
+  return streak;
+}
+
 /* ------------------------------
    Page
 --------------------------------*/
@@ -110,6 +137,7 @@ export default function LogPage() {
 
   const [me, setMe] = useState<MeUser | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [streakDays, setStreakDays] = useState(0);
   const [planId, setPlanId] = useState<string | null>(null);
   const [planName, setPlanName] = useState<string | null>(null);
 
@@ -128,6 +156,13 @@ export default function LogPage() {
     });
     const jj = await refreshed.json().catch(() => ({}));
     setEntries(Array.isArray(jj?.entries) ? jj.entries : []);
+  }
+
+  async function refreshStreak() {
+    const res = await fetch("/api/entries", { cache: "no-store" });
+    const j = await res.json().catch(() => ({}));
+    const allEntries = Array.isArray(j?.entries) ? (j.entries as EntryForStreak[]) : [];
+    setStreakDays(computeLoggingStreak(allEntries));
   }
 
   /* ---- Load user ---- */
@@ -205,6 +240,27 @@ export default function LogPage() {
     };
   }, [ymd]);
 
+  /* ---- Load streak ---- */
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadStreak() {
+      try {
+        const res = await fetch("/api/entries", { cache: "no-store" });
+        const j = await res.json().catch(() => ({}));
+        const allEntries = Array.isArray(j?.entries) ? (j.entries as EntryForStreak[]) : [];
+        if (!cancelled) setStreakDays(computeLoggingStreak(allEntries));
+      } catch {
+        if (!cancelled) setStreakDays(0);
+      }
+    }
+
+    loadStreak();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   /* ---- Summary ---- */
   const firstName = (me?.firstName ?? "").trim() || me?.username?.split("@")[0] || "";
 
@@ -212,7 +268,34 @@ export default function LogPage() {
     return buildEncouragement(firstName, entries.length);
   }, [firstName, entries.length]);
 
-  const todayFoods = useMemo(() => entries.map((e) => e.text), [entries]);
+  const todayFoods = useMemo(
+    () =>
+      entries.map((e) => ({
+        text: e.text,
+        calories:
+          e.calories ??
+          e.parsed?.calories ??
+          e.parsed?.kcal ??
+          e.parsed?.nutrition?.calories ??
+          null,
+        proteinG:
+          e.proteinG ??
+          e.parsed?.macros?.proteinG ??
+          e.parsed?.proteinG ??
+          null,
+        carbsG:
+          e.carbsG ??
+          e.parsed?.macros?.carbsG ??
+          e.parsed?.carbsG ??
+          null,
+        fatG:
+          e.fatG ??
+          e.parsed?.macros?.fatG ??
+          e.parsed?.fatG ??
+          null,
+      })),
+    [entries]
+  );
 
   /**
    * REAL DATA PATH totals:
@@ -292,6 +375,7 @@ export default function LogPage() {
 
       setNewText("");
       await refreshEntriesForDay(ymd);
+      await refreshStreak();
     } finally {
       setSubmitting(false);
     }
@@ -345,6 +429,7 @@ export default function LogPage() {
       setNFat("");
 
       await refreshEntriesForDay(ymd);
+      await refreshStreak();
       setNMsg("Saved ✅");
     } finally {
       setNSubmitting(false);
@@ -365,6 +450,7 @@ export default function LogPage() {
     }
 
     await refreshEntriesForDay(ymd);
+    await refreshStreak();
   }
 
   /* Submit meal Via Photo Code is here */
@@ -434,16 +520,29 @@ export default function LogPage() {
     });
     const jj = await refreshed.json().catch(() => ({}));
     setEntries(Array.isArray(jj?.entries) ? jj.entries : []);
+    await refreshStreak();
   }
 
   // Display Of Page Is Here //
   return (
     <main className={styles.container}>
       {/* PERSONAL HEADER */}
-      <div style={{ marginBottom: 18 }}>
-        <h1 style={{ margin: 0, fontSize: 28 }}>{encouragement.title}</h1>
-        <div className={styles.muted} style={{ marginTop: 6 }}>
-          {encouragement.line}
+      <div className={styles.headerRow}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 28 }}>{encouragement.title}</h1>
+          <div className={styles.muted} style={{ marginTop: 6 }}>
+            {encouragement.line}
+          </div>
+        </div>
+
+        <div className={styles.streakStat} aria-label="Current logging streak">
+          <div className={styles.streakLine}>
+            <span className={styles.streakValue}>{streakDays}</span>
+            <span className={styles.small}>
+              {streakDays === 1 ? "day in a row" : "days in a row"}
+            </span>
+          </div>
+          <div className={styles.streakNote}>Consistency beats intensity.</div>
         </div>
       </div>
 

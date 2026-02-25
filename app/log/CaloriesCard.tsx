@@ -14,6 +14,14 @@ type MacroTotals = {
   proteinG?: number | null;
 };
 
+type FoodItem = {
+  text: string;
+  calories?: number | null;
+  carbsG?: number | null;
+  fatG?: number | null;
+  proteinG?: number | null;
+};
+
 type Props = {
   me: Me | null;
   todayCals: number;
@@ -23,8 +31,8 @@ type Props = {
   // diet compliance for TODAY (0..100 or null)
   dietTodayScore: number | null;
 
-  // list of foods eaten today (plain entry text)
-  todayFoods: string[];
+  // list of foods eaten today with optional per-entry macros
+  todayFoods: FoodItem[];
 
   // NEW: macros (grams) for the day (optional; safe until we capture nutrition)
   macros?: MacroTotals | null;
@@ -179,6 +187,13 @@ function MacroBar({ totals }: { totals: MacroTotals | null | undefined }) {
   );
 }
 
+function formatGramValue(v: number | null | undefined) {
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n)) return "—";
+  const rounded = Math.round(n * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
 /* ---------- compliance-style half gauge ---------- */
 
 function HalfGauge({
@@ -326,7 +341,11 @@ export default function CaloriesCard({
           ) : (
             todayFoods.map((t, i) => (
               <div key={i} className={styles.foodListItem}>
-                {t}
+                <div>{t.text}</div>
+                <div>
+                  {formatGramValue(t.calories)} kcal • P {formatGramValue(t.proteinG)}g • C{" "}
+                  {formatGramValue(t.carbsG)}g • F {formatGramValue(t.fatG)}g
+                </div>
               </div>
             ))
           )}

@@ -545,12 +545,11 @@ const bottom = sortedPairs[sortedPairs.length - 1];
           <div className={styles.note}>
             Tip: Click into <a href="/log">Log</a> to add entries — the Coach page updates automatically.
           </div>
+          <div className={styles.insightBox}>
+            <div className={styles.answerTitle}>Trend insight</div>
+            <div className={styles.answerText}>{trendSummaryText}</div>
+          </div>
         </section>
-
-        {/* NEW: between Trend and Breakdown */}
-        <div className={styles.note}>
-          <strong>Trend insight:</strong> {trendSummaryText}
-        </div>
 
         {/* Breakdown */}
         <section className={styles.card}>
@@ -603,29 +602,28 @@ const bottom = sortedPairs[sortedPairs.length - 1];
           <div className={styles.note}>
             Next upgrade: replace this with USDA-derived grams (carbs/fat/fiber) once your parsed items include nutrients.
           </div>
-        </section>
 
-        {/* NEW: between Breakdown and Ask Coach */}
-        <div className={styles.note}>
-          <strong>Food mix insight:</strong> {foodSummaryText}
-        </div>
+          <div className={styles.insightBox}>
+            <div className={styles.answerTitle}>Food mix insight</div>
+            <div className={styles.answerText}>{foodSummaryText}</div>
+          </div>
+        </section>
 
         {/* Q&A */}
         <section className={styles.card}>
-          {/* ✅ Put answer FIRST so users see it immediately */}
-          {answer && (
-            <div className={styles.answerBox}>
-              <div className={styles.answerTitle}>Coach response</div>
-              <div className={styles.answerText}>{answer}</div>
-            </div>
-          )}
-
           <div className={styles.cardHead}>
             <div>
               <div className={styles.cardTitle}>Ask Coach</div>
               <div className={styles.cardMeta}>Questions are answered from your last 30 days of history</div>
             </div>
           </div>
+
+          {answer && (
+            <div className={styles.insightBox}>
+              <div className={styles.answerTitle}>Coach response</div>
+              <div className={styles.answerText}>{answer}</div>
+            </div>
+          )}
 
           <div className={styles.field}>
             <label className={styles.label} htmlFor="coachQuestion">

@@ -80,13 +80,20 @@
    ============================== */
 
 .card {
-  margin-top: 18px;
-  border-radius: 16px;
-
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 14px 40px rgba(0,0,0,0.22);
+  margin-top: 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
   overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: 0 26px 55px rgba(0,0,0,0.55);
 }
 
 .cardTitle {
@@ -95,10 +102,9 @@
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.62);
-
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.02);
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
 }
 
 .cardBody {
@@ -120,18 +126,18 @@
 
 .row + .row {
   padding-top: 14px;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  border-top: 1px solid var(--border);
 }
 
 .rowTitle {
   font-weight: 900;
-  color: rgba(255,255,255,0.90);
+  color: var(--text);
 }
 
 .rowDesc {
   margin-top: 6px;
   font-size: 13px;
-  color: rgba(255,255,255,0.62);
+  color: var(--muted);
   line-height: 1.4;
 }
 
@@ -142,34 +148,36 @@
 .btn,
 .btnPrimary,
 .btnDanger {
-  border-radius: 999px;
+  appearance: none;
+  border-radius: 8px;
   padding: 10px 14px;
   font-weight: 900;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 120ms ease;
+  color: var(--text);
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 
 .btn {
   background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.10);
-  color: rgba(255,255,255,0.88);
+  border: 1px solid var(--border);
 }
 
 .btn:hover {
+  transform: translateY(-1px);
   background: rgba(255,255,255,0.10);
-  border-color: rgba(118,199,192,0.35);
+  border-color: var(--border-strong);
 }
 
 .btnPrimary {
-  background: rgba(118,199,192,0.18);
-  border: 1px solid rgba(118,199,192,0.35);
-  color: rgba(255,255,255,0.92);
+  background: linear-gradient(180deg, rgba(79,140,255,0.95), rgba(79,140,255,0.70));
+  border: 1px solid rgba(79,140,255,0.40);
 }
 
 .btnPrimary:hover {
-  background: rgba(118,199,192,0.24);
+  transform: translateY(-1px);
+  background: linear-gradient(180deg, rgba(79,140,255,1), rgba(79,140,255,0.74));
 }
 
 .dangerCard {
@@ -179,10 +187,10 @@
 .btnDanger {
   background: rgba(239,68,68,0.14);
   border: 1px solid rgba(239,68,68,0.28);
-  color: rgba(255,255,255,0.92);
 }
 
 .btnDanger:hover {
+  transform: translateY(-1px);
   background: rgba(239,68,68,0.20);
   border-color: rgba(239,68,68,0.38);
 }
@@ -198,9 +206,9 @@
 }
 
 .infoItem {
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
-  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--radius-sm);
   padding: 14px;
 }
 
@@ -209,14 +217,14 @@
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.55);
+  color: var(--muted);
 }
 
 .infoValue {
   margin-top: 8px;
   font-size: 14px;
   font-weight: 900;
-  color: rgba(255,255,255,0.92);
+  color: var(--text);
 }
 
 /* ==============================
