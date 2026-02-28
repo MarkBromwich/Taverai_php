@@ -37,9 +37,49 @@
 
   --radius: 18px;
   --shadow: 0 20px 45px rgba(0,0,0,0.45);
+  --shadow-strong: 0 26px 55px rgba(0,0,0,0.55);
+  --shadow-soft: 0 10px 24px rgba(0,0,0,0.25);
+  --focus: 0 0 0 3px rgba(79, 140, 255, 0.18);
+  --chrome-bg: rgba(5, 11, 20, 0.78);
+  --chrome-bg-strong: rgba(5, 11, 20, 0.85);
+  --button-primary-text: #ffffff;
+  --button-secondary-text: var(--text);
+  --button-secondary-bg: rgba(255,255,255,0.06);
+  --button-secondary-bg-hover: rgba(255,255,255,0.10);
+  --surface-3: rgba(255,255,255,0.03);
 
   /* Bottom nav height (single source of truth) */
   --bottom-nav-h: 84px;
+}
+
+html[data-theme="light"] {
+  --bg0: #eef4fb;
+  --bg1: #f8fbff;
+  --bg2: #dde8f6;
+
+  --surface: rgba(255,255,255,0.86);
+  --surface-2: rgba(255,255,255,0.94);
+  --surface-3: rgba(15, 23, 42, 0.03);
+
+  --border: rgba(15, 23, 42, 0.10);
+  --border-strong: rgba(15, 23, 42, 0.18);
+
+  --text: rgba(15, 23, 42, 0.92);
+  --muted: rgba(51, 65, 85, 0.72);
+
+  --accent-soft: rgba(46,111,115,0.10);
+
+  --shadow: 0 20px 45px rgba(15, 23, 42, 0.10);
+  --shadow-strong: 0 26px 55px rgba(15, 23, 42, 0.14);
+  --shadow-soft: 0 10px 24px rgba(15, 23, 42, 0.10);
+  --focus: 0 0 0 3px rgba(79, 140, 255, 0.16);
+  --chrome-bg: rgba(248, 251, 255, 0.88);
+  --chrome-bg-strong: rgba(248, 251, 255, 0.94);
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 * {
@@ -70,6 +110,13 @@ body::before {
   background:
     radial-gradient(1000px 600px at 20% 10%, rgba(118,199,192,0.15), transparent 50%),
     radial-gradient(800px 500px at 80% 20%, rgba(46,111,115,0.20), transparent 60%),
+    linear-gradient(180deg, var(--bg1), var(--bg0));
+}
+
+html[data-theme="light"] body::before {
+  background:
+    radial-gradient(1000px 600px at 20% 10%, rgba(118,199,192,0.08), transparent 50%),
+    radial-gradient(800px 500px at 80% 20%, rgba(79,140,255,0.10), transparent 60%),
     linear-gradient(180deg, var(--bg1), var(--bg0));
 }
 
@@ -142,7 +189,7 @@ a, button {
   background: linear-gradient(135deg, #2aa7a3, #1f8f8b);
   border: 1px solid #1f8f8b;
 
-  color: #ffffff;
+  color: var(--button-primary-text);
   font-size: 15px;
   font-weight: 900;
   letter-spacing: 0.02em;

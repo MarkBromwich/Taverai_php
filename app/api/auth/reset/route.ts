@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { hashPassword } from "@/lib/passwords";
+import { serverError } from "@/lib/api";
+import { clearSessionCookie } from "@/lib/session";
 
 function sha256(s: string) {
   return crypto.createHash("sha256").update(s).digest("hex");
@@ -55,18 +57,10 @@ export async function POST(req: Request) {
 
     // Optional: you can also clear the cookie here to force re-login
     const res = NextResponse.json({ ok: true });
-    res.cookies.set({
-      name: "foodapp_session",
-      value: "",
-      path: "/",
-      maxAge: 0,
-    });
+    clearSessionCookie(res);
 
     return res;
   } catch (err: any) {
-    return NextResponse.json(
-      { error: "Reset failed", detail: String(err?.message ?? err) },
-      { status: 500 }
-    );
+    return serverError("Password reset failed", err);
   }
 }

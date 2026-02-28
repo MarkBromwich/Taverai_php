@@ -1,26 +1,22 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import crypto from "crypto";
+import { serverError, tooManyRequestsJson } from "@/lib/api";
+import { checkRateLimit, getRequestIp, makeRateLimitKey } from "@/lib/rateLimit";
+import { verifyPassword } from "@/lib/passwords";
+import { setSessionCookie } from "@/lib/session";
+import { NextResponse } from "next/server";
 
-const COOKIE_NAME = "foodapp_session";
-
-function verifyPassword(password: string, stored: string) {
-  // stored format: scrypt$<salt>$<key>
-  const [algo, salt, key] = String(stored || "").split("$");
-  if (algo !== "scrypt" || !salt || !key) return false;
-
-  const derived = crypto.scryptSync(password, salt, 64).toString("hex");
-  try {
-    return crypto.timingSafeEqual(Buffer.from(key, "hex"), Buffer.from(derived, "hex"));
-  } catch {
-    return false;
-  }
-}
+const LOGIN_RULE = { limit: 8, windowMs: 10 * 60 * 1000 };
 
 export async function POST(req: Request) {
   try {
+    const ip = getRequestIp(req);
+    const attempt = await checkRateLimit(makeRateLimitKey("login", [ip]), LOGIN_RULE);
+    if (!attempt.ok) {
+      return tooManyRequestsJson(attempt.retryAfterMs, "Too many login attempts. Try again later.");
+    }
+
     const body = await req.json().catch(() => ({}));
-    const username = String(body?.username ?? "").trim().toLowerCase(); // email stored in username
+    const username = String(body?.username ?? "").trim().toLowerCase();
     const password = String(body?.password ?? "");
 
     if (!username || !username.includes("@")) {
@@ -48,21 +44,9 @@ export async function POST(req: Request) {
       },
     });
 
-    res.cookies.set({
-      name: COOKIE_NAME,
-      value: user.id,
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    });
-
+    setSessionCookie(res, user.id);
     return res;
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: "Login failed", detail: String(err?.message ?? err) },
-      { status: 500 }
-    );
+  } catch (err) {
+    return serverError("Login failed", err);
   }
 }

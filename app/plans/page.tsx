@@ -46,6 +46,16 @@ export default function PlansPage() {
 
   const [calName, setCalName] = useState("Calories Plan");
   const [calTarget, setCalTarget] = useState("2000");
+  const [customName, setCustomName] = useState("Muscle Gain Builder");
+  const [customCalories, setCustomCalories] = useState("3000");
+  const [carbMin, setCarbMin] = useState("35");
+  const [carbMax, setCarbMax] = useState("45");
+  const [proteinMin, setProteinMin] = useState("25");
+  const [proteinMax, setProteinMax] = useState("35");
+  const [fatMin, setFatMin] = useState("20");
+  const [fatMax, setFatMax] = useState("30");
+  const [customPreset, setCustomPreset] = useState("muscle-gain");
+  const [addingCustom, setAddingCustom] = useState(false);
 
   function handle401(res: Response) {
     if (res.status === 401) {
@@ -203,6 +213,101 @@ export default function PlansPage() {
     setMsg("Plan added ✅");
   }
 
+  function applyCustomPreset(preset: string) {
+    setCustomPreset(preset);
+    if (preset === "muscle-gain") {
+      setCustomName("Muscle Gain Builder");
+      setCustomCalories("3000");
+      setCarbMin("35");
+      setCarbMax("45");
+      setProteinMin("25");
+      setProteinMax("35");
+      setFatMin("20");
+      setFatMax("30");
+      return;
+    }
+    if (preset === "high-protein-cut") {
+      setCustomName("High Protein Cut");
+      setCustomCalories("2200");
+      setCarbMin("20");
+      setCarbMax("30");
+      setProteinMin("35");
+      setProteinMax("45");
+      setFatMin("20");
+      setFatMax("30");
+      return;
+    }
+    setCustomName("Custom Builder");
+    setCustomCalories("2500");
+    setCarbMin("30");
+    setCarbMax("40");
+    setProteinMin("25");
+    setProteinMax("35");
+    setFatMin("20");
+    setFatMax("30");
+  }
+
+  async function addCustomPlan() {
+    setMsg(null);
+    setAddingCustom(true);
+    try {
+      const cMin = Number(carbMin) / 100;
+      const cMax = Number(carbMax) / 100;
+      const pMin = Number(proteinMin) / 100;
+      const pMax = Number(proteinMax) / 100;
+      const fMin = Number(fatMin) / 100;
+      const fMax = Number(fatMax) / 100;
+      const totalMin = cMin + pMin + fMin;
+      const totalMax = cMax + pMax + fMax;
+
+      if (
+        !Number.isFinite(cMin) || !Number.isFinite(cMax) ||
+        !Number.isFinite(pMin) || !Number.isFinite(pMax) ||
+        !Number.isFinite(fMin) || !Number.isFinite(fMax)
+      ) {
+        setMsg("Enter valid macro percentages.");
+        return;
+      }
+      if (totalMin > 1.05 || totalMax < 0.95) {
+        setMsg("Your macro ranges should roughly cover 100% together.");
+        return;
+      }
+
+      const res = await fetch("/api/plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "MEDITERRANEAN",
+          name: customName,
+          config: {
+            templateSlug: "custom",
+            targetCalories: Number(customCalories),
+            scoringProfile: {
+              slug: "custom",
+              label: customName,
+              carbs: { min: cMin, max: cMax },
+              protein: { min: pMin, max: pMax },
+              fat: { min: fMin, max: fMax },
+              penaltyDivisor: 0.24,
+            },
+          },
+        }),
+      });
+
+      if (handle401(res)) return;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMsg(data?.error ?? "Failed to add custom plan");
+        return;
+      }
+
+      await loadPlans();
+      setMsg("Custom plan added ✅");
+    } finally {
+      setAddingCustom(false);
+    }
+  }
+
   async function deletePlan(id: string) {
     const res = await fetch(`/api/plans?id=${encodeURIComponent(id)}`, {
       method: "DELETE",
@@ -349,6 +454,82 @@ export default function PlansPage() {
             </div>
           )}
         </div>
+      </div>
+
+      <div className={styles.card}>
+        <h2 className={styles.sectionTitle}>Custom Diet Plan Builder</h2>
+        <p className={styles.subtle}>
+          Build a plan around your own macro strategy, like bulking, cutting, or a high-protein lifting phase.
+        </p>
+
+        <div className={styles.fieldGrid}>
+          <label className={styles.field}>
+            <span className={styles.subtle}>Preset</span>
+            <select
+              className={styles.select}
+              value={customPreset}
+              onChange={(e) => applyCustomPreset(e.target.value)}
+            >
+              <option value="muscle-gain">Muscle gain</option>
+              <option value="high-protein-cut">High-protein cut</option>
+              <option value="custom">Balanced custom</option>
+            </select>
+          </label>
+
+          <label className={styles.field}>
+            <span className={styles.subtle}>Plan name</span>
+            <input
+              className={styles.input}
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+              placeholder="e.g. Powerlifting Bulk"
+            />
+          </label>
+
+          <label className={styles.field}>
+            <span className={styles.subtle}>Target calories</span>
+            <input
+              className={styles.input}
+              type="number"
+              min={1200}
+              max={5000}
+              step={25}
+              value={customCalories}
+              onChange={(e) => setCustomCalories(e.target.value)}
+            />
+          </label>
+        </div>
+
+        <div className={styles.macroBuilder}>
+          <div className={styles.macroCard}>
+            <div className={styles.macroTitle}>Carbs %</div>
+            <div className={styles.macroRange}>
+              <input className={styles.input} type="number" value={carbMin} onChange={(e) => setCarbMin(e.target.value)} />
+              <span className={styles.rangeDash}>to</span>
+              <input className={styles.input} type="number" value={carbMax} onChange={(e) => setCarbMax(e.target.value)} />
+            </div>
+          </div>
+          <div className={styles.macroCard}>
+            <div className={styles.macroTitle}>Protein %</div>
+            <div className={styles.macroRange}>
+              <input className={styles.input} type="number" value={proteinMin} onChange={(e) => setProteinMin(e.target.value)} />
+              <span className={styles.rangeDash}>to</span>
+              <input className={styles.input} type="number" value={proteinMax} onChange={(e) => setProteinMax(e.target.value)} />
+            </div>
+          </div>
+          <div className={styles.macroCard}>
+            <div className={styles.macroTitle}>Fat %</div>
+            <div className={styles.macroRange}>
+              <input className={styles.input} type="number" value={fatMin} onChange={(e) => setFatMin(e.target.value)} />
+              <span className={styles.rangeDash}>to</span>
+              <input className={styles.input} type="number" value={fatMax} onChange={(e) => setFatMax(e.target.value)} />
+            </div>
+          </div>
+        </div>
+
+        <button className={styles.buttonPrimary} onClick={addCustomPlan} disabled={addingCustom} style={{ marginTop: 12 }}>
+          {addingCustom ? "Adding…" : "Add custom plan"}
+        </button>
       </div>
     </main>
   );

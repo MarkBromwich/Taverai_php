@@ -1,23 +1,24 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import crypto from "crypto";
+import { hashPassword } from "@/lib/passwords";
+import { serverError, tooManyRequestsJson } from "@/lib/api";
+import { checkRateLimit, getRequestIp, makeRateLimitKey } from "@/lib/rateLimit";
+import { setSessionCookie } from "@/lib/session";
 
-const COOKIE_NAME = "foodapp_session";
-
-function hashPassword(password: string) {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const key = crypto.scryptSync(password, salt, 64).toString("hex");
-  return `scrypt$${salt}$${key}`;
-}
+const SIGNUP_RULE = { limit: 5, windowMs: 10 * 60 * 1000 };
 
 export async function POST(req: Request) {
   try {
+    const ip = getRequestIp(req);
+    const attempt = await checkRateLimit(makeRateLimitKey("signup", [ip]), SIGNUP_RULE);
+    if (!attempt.ok) {
+      return tooManyRequestsJson(attempt.retryAfterMs, "Too many signup attempts. Try again later.");
+    }
+
     const body = await req.json().catch(() => ({}));
 
     const firstName = body?.firstName != null ? String(body.firstName).trim() : "";
     const lastName = body?.lastName != null ? String(body.lastName).trim() : "";
-
-    // username is the email address
     const email = body?.username != null ? String(body.username).trim().toLowerCase() : "";
     const password = body?.password != null ? String(body.password) : "";
 
@@ -38,17 +39,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "An account with that email already exists." }, { status: 409 });
     }
 
-    const passwordHash = hashPassword(password);
-
     const user = await prisma.user.create({
       data: {
         username: email,
-        passwordHash,
+        passwordHash: hashPassword(password),
         firstName: firstName || null,
         lastName: lastName || null,
-        // keep these if they exist in your schema; otherwise Prisma will ignore? (it won't)
-        // paidStatus and avatarUrl are safe only if they exist in schema
-        // paidStatus: "Free",
       },
       select: {
         id: true,
@@ -58,30 +54,18 @@ export async function POST(req: Request) {
       },
     });
 
-    // If you have UserPreferences in schema, create it now (safe try/catch)
     try {
       await prisma.userPreferences.create({
         data: { userId: user.id },
       });
     } catch {
-      // ignore if already exists or if you don't have this table yet
+      // preferences row is optional here
     }
 
     const res = NextResponse.json({ user });
-
-    res.cookies.set({
-      name: COOKIE_NAME,
-      value: user.id,
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    });
-
+    setSessionCookie(res, user.id);
     return res;
   } catch (err: any) {
-    // Prisma unique constraint (just in case)
     const msg = String(err?.message ?? err);
     const code = String(err?.code ?? "");
 
@@ -89,9 +73,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "That email is already in use." }, { status: 409 });
     }
 
-    return NextResponse.json(
-      { error: "Signup failed", detail: msg },
-      { status: 500 }
-    );
+    return serverError("Signup failed", err);
   }
 }

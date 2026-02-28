@@ -62,6 +62,12 @@
   color: var(--text);
 }
 
+.titleWithInfo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .cardMeta {
   margin-top: 3px;
   color: var(--muted);
@@ -73,6 +79,49 @@
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: center;
+}
+
+.rangeLabel {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.rangeSelect {
+  appearance: none;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+}
+
+.trendTabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.trendTab {
+  appearance: none;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.trendTabActive {
+  border-color: rgba(79, 140, 255, 0.35);
+  background: var(--accent-soft);
+  color: var(--text);
 }
 
 .pill {
@@ -100,7 +149,11 @@
 .chartGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 0;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
 }
 
 @media (max-width: 900px) {
@@ -110,10 +163,25 @@
 }
 
 .chartBlock {
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: var(--radius-sm);
+  border: 0;
+  border-right: 1px solid rgba(255,255,255,0.10);
   padding: 12px;
-  background: rgba(255,255,255,0.05);
+  background: transparent;
+}
+
+.chartBlock:last-child {
+  border-right: 0;
+}
+
+@media (max-width: 900px) {
+  .chartBlock {
+    border-right: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+  }
+
+  .chartBlock:last-child {
+    border-bottom: 0;
+  }
 }
 
 .chartLabelRow {
@@ -155,16 +223,30 @@
 
 .dot {
   fill: rgba(79, 140, 255, 0.90);
+  cursor: pointer;
+}
+
+.dotTooltipBg {
+  fill: rgba(12, 18, 30, 0.95);
+  stroke: rgba(255,255,255,0.16);
+  stroke-width: 1;
+}
+
+.dotTooltipText {
+  fill: rgba(255,255,255,0.94);
+  font-size: 10px;
+  font-weight: 800;
+  dominant-baseline: middle;
 }
 
 .xLabels {
   margin-top: 6px;
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 11px;
   color: var(--muted);
-  text-align: center;
+  text-align: left;
 }
 
 /* ---------- Breakdown ---------- */
@@ -172,11 +254,21 @@
 .breakdownLegend {
   display: flex;
   gap: 14px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   font-size: 12px;
   color: var(--muted);
   margin-bottom: 10px;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: thin;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
 }
 
 .legendDot {
@@ -184,13 +276,19 @@
   height: 10px;
   border-radius: 999px;
   display: inline-block;
-  margin-right: 6px;
+  margin-right: 0;
 }
 
 .legendFruit { background: rgba(34, 197, 94, 0.75); }
 .legendVeg { background: rgba(79, 140, 255, 0.75); }
-.legendCarbs { background: rgba(250, 204, 21, 0.85); }
-.legendFats { background: rgba(239, 68, 68, 0.70); }
+.legendGrains { background: rgba(245, 158, 11, 0.85); }
+.legendSalt { background: rgba(148, 163, 184, 0.82); }
+.legendSugar { background: rgba(239, 68, 68, 0.72); }
+.legendCalories { background: rgba(168, 85, 247, 0.88); }
+.legendCarbs { background: rgba(79, 140, 255, 0.90); }
+.legendFat { background: rgba(250, 204, 21, 0.90); }
+.legendProtein { background: rgba(118, 199, 192, 0.90); }
+.legendSatFat { background: rgba(244, 114, 182, 0.85); }
 
 .breakdownList {
   display: grid;
@@ -199,9 +297,13 @@
 
 .breakdownRow {
   display: grid;
-  grid-template-columns: 160px 1fr 160px;
+  grid-template-columns: 160px 1fr;
   gap: 10px;
-  align-items: center;
+  align-items: start;
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
 }
 
 @media (max-width: 860px) {
@@ -217,32 +319,96 @@
   color: var(--text);
 }
 
-.breakdownNums {
+.breakdownContent {
+  display: grid;
+  gap: 8px;
+}
+
+.nutrientGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.nutrientChip {
+  --chip-fill: 0%;
+  font-size: 12px;
+  color: var(--text);
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background:
+    linear-gradient(90deg, var(--chip-color-soft, rgba(255,255,255,0.08)) 0 var(--chip-fill), rgba(255,255,255,0.05) var(--chip-fill) 100%);
+}
+
+.nutrientCalories { border-color: rgba(168, 85, 247, 0.95); --chip-color-soft: rgba(168, 85, 247, 0.18); }
+.nutrientCarbs { border-color: rgba(79, 140, 255, 0.96); --chip-color-soft: rgba(79, 140, 255, 0.18); }
+.nutrientProtein { border-color: rgba(118, 199, 192, 0.96); --chip-color-soft: rgba(118, 199, 192, 0.18); }
+.nutrientFat { border-color: rgba(250, 204, 21, 0.96); --chip-color-soft: rgba(250, 204, 21, 0.18); }
+
+.dayDivider {
+  width: 72%;
+  height: 1px;
+  background: rgba(203, 213, 225, 0.45);
+  margin: 2px auto 4px;
+}
+
+.groupGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.groupPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12px;
   color: var(--muted);
-  text-align: right;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+
+.ratioGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.ratioChip {
+  --chip-fill: 0%;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background:
+    linear-gradient(90deg, var(--chip-color-soft, rgba(255,255,255,0.08)) 0 var(--chip-fill), rgba(255,255,255,0.03) var(--chip-fill) 100%);
+}
+
+.ratioFruit { border-color: rgba(34, 197, 94, 0.92); --chip-color-soft: rgba(34, 197, 94, 0.16); }
+.ratioGrains { border-color: rgba(245, 158, 11, 0.94); --chip-color-soft: rgba(245, 158, 11, 0.16); }
+.ratioVeg { border-color: rgba(79, 140, 255, 0.92); --chip-color-soft: rgba(79, 140, 255, 0.16); }
+.ratioFat { border-color: rgba(250, 204, 21, 0.96); --chip-color-soft: rgba(250, 204, 21, 0.16); }
+.ratioSugar { border-color: rgba(239, 68, 68, 0.9); --chip-color-soft: rgba(239, 68, 68, 0.16); }
+.ratioSatFat { border-color: rgba(244, 114, 182, 0.94); --chip-color-soft: rgba(244, 114, 182, 0.16); }
+
+.breakdownEmpty {
+  font-size: 12px;
+  color: var(--muted);
 }
 
 @media (max-width: 860px) {
-  .breakdownNums {
-    text-align: left;
+  .nutrientGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ratioGrid {
+    grid-template-columns: 1fr;
   }
 }
-
-.stack {
-  height: 12px;
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(255,255,255,0.05);
-  display: flex;
-}
-
-.seg { height: 100%; }
-.segFruit { background: rgba(34, 197, 94, 0.75); }
-.segVeg { background: rgba(79, 140, 255, 0.75); }
-.segCarbs { background: rgba(250, 204, 21, 0.85); }
-.segFats { background: rgba(239, 68, 68, 0.70); }
 
 /* ---------- Q&A ---------- */
 
@@ -322,10 +488,60 @@
 }
 
 .answerTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 12px;
   font-weight: 900;
   color: var(--muted);
   margin-bottom: 6px;
+  position: relative;
+}
+
+.inlineInfoWrap {
+  margin-left: auto;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.inlineInfoBtn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-style: italic;
+  font-weight: 800;
+  color: rgba(255,255,255,0.82);
+  cursor: pointer;
+}
+
+.inlineInfoBubble {
+  position: absolute;
+  right: 0;
+  top: 18px;
+  width: min(260px, 72vw);
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(12, 18, 30, 0.96);
+  color: rgba(255,255,255,0.92);
+  font-size: 12px;
+  line-height: 1.35;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-3px);
+  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.inlineInfoWrap:hover .inlineInfoBubble,
+.inlineInfoWrap:focus-within .inlineInfoBubble {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 .answerText {
@@ -347,6 +563,90 @@
   margin-top: 12px;
   font-size: 13px;
   color: var(--muted);
+}
+
+.miniGrid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.miniCard {
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.03);
+  padding: 12px;
+}
+
+.moreToggle {
+  margin-top: 10px;
+  appearance: none;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.04);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.moreTriangle {
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.moreWrap {
+  margin-top: 10px;
+}
+
+.heatStrip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  align-items: end;
+}
+
+.heatCol {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+}
+
+.heatLabel {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.heatTrack {
+  width: 100%;
+  max-width: 28px;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.heatFill {
+  width: 100%;
+  background: rgba(79, 140, 255, 0.95);
+  border-top-left-radius: 7px;
+  border-top-right-radius: 7px;
+}
+
+.heatPct {
+  font-size: 11px;
+  color: var(--text);
+}
+
+@media (max-width: 860px) {
+  .miniGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .loading {

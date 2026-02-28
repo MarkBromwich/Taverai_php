@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { BookOpen, Brain, ClipboardList, User } from "lucide-react";
+import { BookOpen, Brain, ClipboardList, User, UtensilsCrossed } from "lucide-react";
 import styles from "./shell.module.css";
 
 type NavItem = {
@@ -15,6 +15,7 @@ type NavItem = {
 const NAV: NavItem[] = [
   { href: "/log", label: "Log", icon: <BookOpen size={20} /> },
   { href: "/coach", label: "Coach", icon: <Brain size={20} /> },
+  { href: "/menu", label: "Menu", icon: <UtensilsCrossed size={20} /> },
   { href: "/plans", label: "Plans", icon: <ClipboardList size={20} /> },
 ];
 

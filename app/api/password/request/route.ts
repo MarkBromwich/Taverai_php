@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
+import { serverError } from "@/lib/api";
 
 function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -36,14 +37,12 @@ export async function POST(req: Request) {
       },
     });
 
-    // DEV: log reset link instead of sending email
-    console.log(`Reset link: http://localhost:3000/reset?token=${rawToken}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`Reset link (dev): http://localhost:3000/reset?token=${rawToken}`);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
-    return NextResponse.json(
-      { error: "Request failed", detail: String(err?.message ?? err) },
-      { status: 500 }
-    );
+    return serverError("Password reset request failed", err);
   }
 }

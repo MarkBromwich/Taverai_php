@@ -34,10 +34,11 @@ type MeUser = {
   firstName?: string | null;
   lastName?: string | null;
   displayName?: string | null;
+  avatarUrl?: string | null;
   dailyCalorieGoal?: number | null;
 };
 
-type Plan = { id: string; name: string; type: string };
+type Plan = { id: string; name: string; type: string; config?: any };
 
 /* ------------------------------
    Date Helpers
@@ -140,6 +141,8 @@ export default function LogPage() {
   const [streakDays, setStreakDays] = useState(0);
   const [planId, setPlanId] = useState<string | null>(null);
   const [planName, setPlanName] = useState<string | null>(null);
+  const [planType, setPlanType] = useState<string | null>(null);
+  const [planTemplateSlug, setPlanTemplateSlug] = useState<string | null>(null);
 
   // prevent paging into the future
   const todayKey = todayYMD;
@@ -200,11 +203,19 @@ export default function LogPage() {
         if (!cancelled) {
           setPlanId(primary?.id ?? null);
           setPlanName(primary?.name ?? null);
+          setPlanType(primary?.type ?? null);
+          setPlanTemplateSlug(
+            typeof primary?.config?.templateSlug === "string"
+              ? primary.config.templateSlug
+              : null
+          );
         }
       } catch {
         if (!cancelled) {
           setPlanId(null);
           setPlanName(null);
+          setPlanType(null);
+          setPlanTemplateSlug(null);
         }
       }
     }
@@ -271,6 +282,7 @@ export default function LogPage() {
   const todayFoods = useMemo(
     () =>
       entries.map((e) => ({
+        id: e.id,
         text: e.text,
         calories:
           e.calories ??
@@ -296,6 +308,45 @@ export default function LogPage() {
       })),
     [entries]
   );
+
+  async function updateFoodEntry(payload: {
+    id: string;
+    text: string;
+    calories: number | null;
+    proteinG: number | null;
+    carbsG: number | null;
+    fatG: number | null;
+  }) {
+    const res = await fetch("/api/entries", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j?.error ?? "Failed to update entry");
+    }
+
+    await refreshEntriesForDay(ymd);
+    await refreshStreak();
+  }
+
+  async function deleteFoodEntry(id: string) {
+    const res = await fetch("/api/entries", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j?.error ?? "Failed to delete entry");
+    }
+
+    await refreshEntriesForDay(ymd);
+    await refreshStreak();
+  }
 
   /**
    * REAL DATA PATH totals:
@@ -461,8 +512,24 @@ export default function LogPage() {
     proteinG: number | null;
     carbsG: number | null;
     fatG: number | null;
+    sugarG?: number | null;
+    fiberG?: number | null;
+    satFatG?: number | null;
     confidence?: number | null;
     notes?: string | null;
+    items?: Array<{
+      name: string;
+      confidence?: number | null;
+      servings?: number | null;
+      foodGroup?: "fruit" | "vegetable" | "grain" | "protein" | "dairy" | "other";
+      calories?: number | null;
+      sugarG?: number | null;
+      addedSugarG?: number | null;
+      fiberG?: number | null;
+      satFatG?: number | null;
+      sodiumMg?: number | null;
+      tags?: string[];
+    }> | null;
   };
 
   async function submitMealPhoto(file: File): Promise<MealScanResult> {
@@ -487,8 +554,12 @@ export default function LogPage() {
       proteinG: r.proteinG ?? null,
       carbsG: r.carbsG ?? null,
       fatG: r.fatG ?? null,
+      sugarG: r.sugarG ?? null,
+      fiberG: r.fiberG ?? null,
+      satFatG: r.satFatG ?? null,
       confidence: r.confidence ?? null,
       notes: r.notes ?? null,
+      items: Array.isArray(r.items) ? r.items : null,
     };
   }
 
@@ -503,10 +574,19 @@ export default function LogPage() {
         proteinG: draft.proteinG,
         carbsG: draft.carbsG,
         fatG: draft.fatG,
+        sugarG: draft.sugarG ?? null,
+        fiberG: draft.fiberG ?? null,
+        satFatG: draft.satFatG ?? null,
         parsed: {
           source: "mealPhoto",
           confidence: draft.confidence ?? null,
           notes: draft.notes ?? null,
+          items: draft.items ?? null,
+          nutrition: {
+            sugarG: draft.sugarG ?? null,
+            fiberG: draft.fiberG ?? null,
+            satFatG: draft.satFatG ?? null,
+          },
         },
       }),
     });
@@ -528,10 +608,19 @@ export default function LogPage() {
     <main className={styles.container}>
       {/* PERSONAL HEADER */}
       <div className={styles.headerRow}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 28 }}>{encouragement.title}</h1>
-          <div className={styles.muted} style={{ marginTop: 6 }}>
-            {encouragement.line}
+        <div className={styles.headerIntro}>
+          <div className={styles.headerAvatar} aria-hidden="true">
+            {me?.avatarUrl ? (
+              <img src={me.avatarUrl} alt="" className={styles.headerAvatarImage} />
+            ) : (
+              <span>{(firstName?.[0] || me?.username?.[0] || "U").toUpperCase()}</span>
+            )}
+          </div>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 28 }}>{encouragement.title}</h1>
+            <div className={styles.muted} style={{ marginTop: 6 }}>
+              {encouragement.line}
+            </div>
           </div>
         </div>
 
@@ -630,9 +719,13 @@ export default function LogPage() {
         todayCals={todayCals}
         goal={me?.dailyCalorieGoal ?? null}
         planName={planName}
+        planType={planType}
+        planTemplateSlug={planTemplateSlug}
         dietTodayScore={dietTodayScore}
         todayFoods={todayFoods}
         macros={macros}
+        onUpdateFood={updateFoodEntry}
+        onDeleteFood={deleteFoodEntry}
       />
 
       {/* ONE ADD CARD WITH MODE TOGGLE */}

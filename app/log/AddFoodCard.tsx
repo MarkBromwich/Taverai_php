@@ -13,8 +13,24 @@ type MealScanResult = {
   proteinG: number | null;
   carbsG: number | null;
   fatG: number | null;
+  sugarG?: number | null;
+  fiberG?: number | null;
+  satFatG?: number | null;
   confidence?: number | null;
   notes?: string | null;
+  items?: Array<{
+    name: string;
+    confidence?: number | null;
+    servings?: number | null;
+    foodGroup?: "fruit" | "vegetable" | "grain" | "protein" | "dairy" | "other";
+    calories?: number | null;
+    sugarG?: number | null;
+    addedSugarG?: number | null;
+    fiberG?: number | null;
+    satFatG?: number | null;
+    sodiumMg?: number | null;
+    tags?: string[];
+  }> | null;
 };
 
 /* -----------------------------
@@ -329,30 +345,42 @@ export default function AddFoodCard(props: {
               gap: 10,
             }}
           >
-            <input
-              className={styles.input}
-              value={mealDraft.calories ?? ""}
-              readOnly
-              placeholder="Calories"
-            />
-            <input
-              className={styles.input}
-              value={mealDraft.proteinG ?? ""}
-              readOnly
-              placeholder="Protein"
-            />
-            <input
-              className={styles.input}
-              value={mealDraft.carbsG ?? ""}
-              readOnly
-              placeholder="Carbs"
-            />
-            <input
-              className={styles.input}
-              value={mealDraft.fatG ?? ""}
-              readOnly
-              placeholder="Fat"
-            />
+            <div>
+              <label className={styles.label}>Calories (kcal)</label>
+              <input
+                className={styles.input}
+                value={mealDraft.calories ?? ""}
+                readOnly
+                placeholder="Calories"
+              />
+            </div>
+            <div>
+              <label className={styles.label}>Protein (g)</label>
+              <input
+                className={styles.input}
+                value={mealDraft.proteinG ?? ""}
+                readOnly
+                placeholder="Protein"
+              />
+            </div>
+            <div>
+              <label className={styles.label}>Carbs (g)</label>
+              <input
+                className={styles.input}
+                value={mealDraft.carbsG ?? ""}
+                readOnly
+                placeholder="Carbs"
+              />
+            </div>
+            <div>
+              <label className={styles.label}>Fat (g)</label>
+              <input
+                className={styles.input}
+                value={mealDraft.fatG ?? ""}
+                readOnly
+                placeholder="Fat"
+              />
+            </div>
           </div>
 
           {/* Portion Slider */}
@@ -394,7 +422,6 @@ export default function AddFoodCard(props: {
           </div>
         </div>
       )}
-      <p>&nbsp;</p><p>&nbsp;</p>
     </section>
   );
 }

@@ -15,21 +15,54 @@
   padding: 24px 0 18px;
 }
 
+.avatarUpload {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
 .avatar {
   width: 56px;
   height: 56px;
   border-radius: 16px;
+  overflow: hidden;
 
   display: grid;
   place-items: center;
 
   font-weight: 900;
   font-size: 18px;
-  color: rgba(255,255,255,0.92);
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+}
 
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.10);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatarHint {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.hiddenInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .topText {
@@ -47,19 +80,19 @@
   font-size: 22px;
   font-weight: 900;
   letter-spacing: -0.02em;
-  color: rgba(255,255,255,0.92);
+  color: var(--text);
 }
 
 .handle {
   margin-top: 4px;
   font-size: 13px;
   font-weight: 800;
-  color: rgba(255,255,255,0.70);
+  color: var(--muted);
 }
 
 .sub {
   margin-top: 6px;
-  color: rgba(255,255,255,0.62);
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -70,7 +103,7 @@
   padding: 6px 10px;
   border-radius: 999px;
 
-  color: rgba(255,255,255,0.92);
+  color: var(--text);
   background: rgba(118,199,192,0.14);
   border: 1px solid rgba(118,199,192,0.28);
 }
@@ -93,7 +126,7 @@
 .card:hover {
   transform: translateY(-2px);
   border-color: var(--border-strong);
-  box-shadow: 0 26px 55px rgba(0,0,0,0.55);
+  box-shadow: var(--shadow-strong);
 }
 
 .cardTitle {
@@ -104,13 +137,19 @@
   text-transform: uppercase;
   color: var(--muted);
   border-bottom: 1px solid var(--border);
-  background: rgba(255,255,255,0.03);
+  background: var(--surface-3);
 }
 
 .cardBody {
   padding: 18px;
   display: grid;
   gap: 18px; /* 👈 consistent vertical spacing */
+}
+
+.successLine {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(74, 222, 128, 0.92);
 }
 
 /* ==============================
@@ -160,19 +199,20 @@
 }
 
 .btn {
-  background: rgba(255,255,255,0.06);
+  background: var(--button-secondary-bg);
   border: 1px solid var(--border);
 }
 
 .btn:hover {
   transform: translateY(-1px);
-  background: rgba(255,255,255,0.10);
+  background: var(--button-secondary-bg-hover);
   border-color: var(--border-strong);
 }
 
 .btnPrimary {
   background: linear-gradient(180deg, rgba(79,140,255,0.95), rgba(79,140,255,0.70));
   border: 1px solid rgba(79,140,255,0.40);
+  color: var(--button-primary-text);
 }
 
 .btnPrimary:hover {
@@ -195,6 +235,60 @@
   border-color: rgba(239,68,68,0.38);
 }
 
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.input,
+.select {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  outline: none;
+}
+
+.input:focus,
+.select:focus {
+  box-shadow: var(--focus);
+  border-color: rgba(79, 140, 255, 0.35);
+}
+
+.inlineField {
+  display: grid;
+  gap: 10px;
+}
+
+.checkRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.rowActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* ==============================
    Info Grid
    ============================== */
@@ -207,7 +301,7 @@
 
 .infoItem {
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.04);
+  background: var(--surface-3);
   border-radius: var(--radius-sm);
   padding: 14px;
 }
@@ -243,6 +337,10 @@
 
 @media (max-width: 720px) {
   .infoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formGrid {
     grid-template-columns: 1fr;
   }
 }

@@ -4,22 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { promises as fs } from "fs";
 import path from "path";
 import crypto from "crypto";
+import { getUserIdFromRequest } from "@/lib/session";
+import { serverError, unauthorizedJson } from "@/lib/api";
+import { validateImageUpload } from "@/lib/uploads";
 
-const COOKIE_NAME = "foodapp_session";
-
-function readCookie(cookieHeader: string | null, name: string): string | null {
-  if (!cookieHeader) return null;
-  const parts = cookieHeader.split(";").map((p) => p.trim());
-  for (const p of parts) {
-    if (p.startsWith(name + "=")) return decodeURIComponent(p.slice(name.length + 1));
-  }
-  return null;
-}
-
-/**
- * Convert YYYY-MM-DD to a safe Date INSIDE that day (midday UTC)
- * Avoids DST/timezone edge cases.
- */
 function createdAtFromYMD(ymd: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
   return new Date(`${ymd}T12:00:00.000Z`);
@@ -29,38 +17,25 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
-    const userId = readCookie(req.headers.get("cookie"), COOKIE_NAME);
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const userId = getUserIdFromRequest(req);
+    if (!userId) return unauthorizedJson();
 
     const form = await req.formData();
-    const file = form.get("file");
     const ymd = String(form.get("date") ?? "").trim();
-
-    if (!file || !(file instanceof File)) {
-      return NextResponse.json({ error: "Missing file" }, { status: 400 });
+    const validated = await validateImageUpload(form.get("file"), { fieldLabel: "meal image", maxBytes: 6 * 1024 * 1024 });
+    if ("error" in validated) {
+      return NextResponse.json({ error: validated.error }, { status: 400 });
     }
 
-    // --- Save file locally (dev) into /public/uploads ---
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
     await fs.mkdir(uploadsDir, { recursive: true });
 
-    const extFromName = path.extname(file.name || "").slice(0, 12);
-    const ext =
-      extFromName ||
-      (file.type === "image/jpeg" ? ".jpg" :
-        file.type === "image/png" ? ".png" :
-        file.type === "image/webp" ? ".webp" : "");
-
     const id = crypto.randomBytes(12).toString("hex");
-    const filename = `meal_${Date.now()}_${id}${ext || ""}`;
+    const filename = `meal_${Date.now()}_${id}${validated.ext}`;
     const absPath = path.join(uploadsDir, filename);
-
-    const arrayBuffer = await file.arrayBuffer();
-    await fs.writeFile(absPath, Buffer.from(arrayBuffer));
+    await fs.writeFile(absPath, validated.buffer);
 
     const publicUrl = `/uploads/${filename}`;
-
-    // --- Create a FoodEntry that references the photo ---
     const createdAt = ymd ? createdAtFromYMD(ymd) : null;
 
     const entry = await prisma.foodEntry.create({
@@ -71,20 +46,15 @@ export async function POST(req: NextRequest) {
         parsed: {
           source: "photo",
           imageUrl: publicUrl,
-          originalName: file.name ?? null,
-          mime: file.type ?? null,
-          size: (file as any).size ?? null,
+          mime: validated.mime,
+          size: validated.size,
         },
       },
       include: { scores: { include: { plan: true } } },
     });
 
     return NextResponse.json({ entry, imageUrl: publicUrl });
-  } catch (err: any) {
-    console.error("Meal photo POST crashed:", err);
-    return NextResponse.json(
-      { error: "Meal photo POST crashed", detail: String(err?.message ?? err) },
-      { status: 500 }
-    );
+  } catch (err) {
+    return serverError("Meal photo upload failed", err);
   }
 }

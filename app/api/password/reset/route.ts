@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
+import { serverError } from "@/lib/api";
 
 function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -46,9 +47,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
-    return NextResponse.json(
-      { error: "Reset failed", detail: String(err?.message ?? err) },
-      { status: 500 }
-    );
+    return serverError("Password reset failed", err);
   }
 }

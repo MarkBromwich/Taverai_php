@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
+import { serverError } from "@/lib/api";
 
 const TOKEN_BYTES = 32;            // strong
 const EXPIRES_MINUTES = 30;        // reasonable default
@@ -90,18 +91,14 @@ export async function POST(req: Request) {
       },
     });
 
-    // “Pro” behavior: email the link
-    // For now: log link to server console (dev).
     const base = baseUrlFromRequest(req);
     const link = `${base}/reset-password?token=${encodeURIComponent(token)}`;
-
-    console.log("\n🔐 Password reset link (dev):", link, "\n");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("\nPassword reset link (dev):", link, "\n");
+    }
 
     return generic;
   } catch (err: any) {
-    return NextResponse.json(
-      { error: "Forgot password failed", detail: String(err?.message ?? err) },
-      { status: 500 }
-    );
+    return serverError("Forgot password failed", err);
   }
 }

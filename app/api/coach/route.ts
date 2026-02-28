@@ -1,6 +1,8 @@
-// app/api/coach/route.ts
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import { getUserIdFromRequest } from "@/lib/session";
+import { checkRateLimit, getRequestIp, makeRateLimitKey } from "@/lib/rateLimit";
+import { serverError, tooManyRequestsJson, unauthorizedJson } from "@/lib/api";
 
 type Plan = { id: string; name: string; type: string };
 type ScoreRow = {
@@ -16,6 +18,8 @@ type Entry = {
   parsed?: { estimatedCalories?: number; items?: any[]; dietTags?: string[] };
   scores?: ScoreRow[];
 };
+
+const COACH_RULE = { limit: 20, windowMs: 10 * 60 * 1000 };
 
 function startOfLocalDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -71,10 +75,7 @@ function topFoods(entries: Entry[], limit = 6) {
 
 function summarize(entries: Entry[], horizonDays: number) {
   const now = new Date();
-  const cutoff = startOfLocalDay(
-    new Date(now.getFullYear(), now.getMonth(), now.getDate() - (horizonDays - 1))
-  );
-
+  const cutoff = startOfLocalDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - (horizonDays - 1)));
   const recent = entries.filter((e) => new Date(e.createdAt) >= cutoff);
   const plan = pickPrimaryPlan(recent);
   const planId = plan?.id ?? null;
@@ -106,25 +107,17 @@ function summarize(entries: Entry[], horizonDays: number) {
   const scoreVals = dayScores.map((d) => d.score).filter((x): x is number => typeof x === "number");
   const calVals = dayScores.map((d) => d.cals).filter((x): x is number => typeof x === "number");
 
-  const overallAvg = avg(scoreVals);
-  const bestDay = dayScores
-    .filter((d) => typeof d.score === "number")
-    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0];
-
-  const worstDay = dayScores
-    .filter((d) => typeof d.score === "number")
-    .sort((a, b) => (a.score ?? 0) - (b.score ?? 0))[0];
-
-  const foods = topFoods(recent, 6);
+  const bestDay = dayScores.filter((d) => typeof d.score === "number").sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0];
+  const worstDay = dayScores.filter((d) => typeof d.score === "number").sort((a, b) => (a.score ?? 0) - (b.score ?? 0))[0];
 
   return {
     planName: plan?.name ?? null,
     planType: plan?.type ?? null,
     planId,
-    overallAvg,
+    overallAvg: avg(scoreVals),
     bestDay: bestDay ?? null,
     worstDay: worstDay ?? null,
-    foods,
+    foods: topFoods(recent, 6),
     dayScores,
     avgCalories: avg(calVals),
     loggedDays: dayScores.length,
@@ -154,12 +147,21 @@ function coachSystemPrompt() {
     "- Do not mention being an AI.",
     "- Do not ask more than one follow-up question. (Prefer none.)",
     "- If the user has no logged days, tell them exactly what to log next and keep it motivating.",
-    "- Keep it 'blended': a little motivational + tactical + data-aware.",
+    "- Keep it blended: a little motivational, tactical, and data-aware.",
   ].join("\n");
 }
 
 export async function POST(req: Request) {
   try {
+    const userId = getUserIdFromRequest(req);
+    if (!userId) return unauthorizedJson();
+
+    const ip = getRequestIp(req);
+    const attempt = await checkRateLimit(makeRateLimitKey("coach", [userId, ip]), COACH_RULE);
+    if (!attempt.ok) {
+      return tooManyRequestsJson(attempt.retryAfterMs, "Coach question limit reached. Try again later.");
+    }
+
     const body = await req.json().catch(() => ({}));
     const question = String(body?.question ?? "").trim();
     const horizonDays = clamp(Number(body?.horizonDays ?? 30), 7, 90);
@@ -168,10 +170,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing question" }, { status: 400 });
     }
 
-    // ✅ Forward the cookie so /api/entries sees the logged-in user on Render.
     const cookie = req.headers.get("cookie") ?? "";
     const baseUrl = getBaseUrl(req);
-
     const res = await fetch(`${baseUrl}/api/entries?horizonDays=${encodeURIComponent(String(horizonDays))}`, {
       cache: "no-store",
       headers: { cookie },
@@ -179,10 +179,8 @@ export async function POST(req: Request) {
 
     const j = await res.json().catch(() => ({}));
     const entries: Entry[] = Array.isArray(j?.entries) ? j.entries : [];
-
     const summary = summarize(entries, horizonDays);
 
-    // If there’s truly no data, don’t waste tokens.
     if (!summary.loggedDays) {
       const answer =
         `Plan: ${summary.planName ?? "(none selected)"}\n\n` +
@@ -193,16 +191,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ answer });
     }
 
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const model = process.env.OPENAI_COACH_MODEL || process.env.OPENAI_MEAL_MODEL || "gpt-4.1-mini";
-
-    // ✅ FIX: Responses API wants STRING input. Put system in `instructions`, user in `input`.
     const userPrompt = [
       `QUESTION:\n${question}`,
-      ``,
+      "",
       `SUMMARY (last ${horizonDays} days):`,
       JSON.stringify(
         {
@@ -231,10 +224,7 @@ export async function POST(req: Request) {
 
     const answer = (r.output_text ?? "").trim() || "I couldn’t generate coaching text right now.";
     return NextResponse.json({ answer });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: "Coach crashed", detail: String(err?.message ?? err ?? "Unknown error") },
-      { status: 500 }
-    );
+  } catch (err) {
+    return serverError("Coach request failed", err);
   }
 }

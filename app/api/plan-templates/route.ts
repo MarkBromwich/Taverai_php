@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { serverError } from "@/lib/api";
 
 export async function GET() {
   try {
@@ -13,13 +14,7 @@ export async function GET() {
     });
 
     return NextResponse.json({ templates });
-  } catch (err: any) {
-    return NextResponse.json(
-      {
-        error: "Failed to load plan templates",
-        detail: String(err?.message ?? err),
-      },
-      { status: 500 }
-    );
+  } catch (err) {
+    return serverError("Failed to load plan templates", err);
   }
 }

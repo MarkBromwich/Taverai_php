@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Book, Brain, Clipboard } from "lucide-react";
+import { Book, Brain, Clipboard, User, UtensilsCrossed } from "lucide-react";
 import styles from "./shell.module.css";
 
 export default function SiteFooter() {
@@ -27,9 +27,19 @@ export default function SiteFooter() {
               <span>Coach</span>
             </Link>
 
+            <Link className={styles.footerLink} href="/menu">
+              <UtensilsCrossed size={18} strokeWidth={2} />
+              <span>Menu</span>
+            </Link>
+
             <Link className={styles.footerLink} href="/plans">
               <Clipboard size={18} strokeWidth={2} />
               <span>Plans</span>
+            </Link>
+
+            <Link className={styles.footerLink} href="/account">
+              <User size={18} strokeWidth={2} />
+              <span>You</span>
             </Link>
           </div>
         </div>
