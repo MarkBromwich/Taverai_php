@@ -155,6 +155,7 @@ a {
 /* Prevent content from hiding behind mobile bottom nav */
 @media (max-width: 860px) {
   .appMain {
+    padding-top: calc(18px + env(safe-area-inset-top));
     padding-bottom: calc(var(--bottom-nav-h) + 18px + env(safe-area-inset-bottom));
   }
 }
