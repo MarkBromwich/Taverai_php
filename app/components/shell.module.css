@@ -40,6 +40,16 @@
   gap: 16px;
 }
 
+@media (max-width: 860px) {
+  .header {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .headerRow {
+    height: 60px;
+  }
+}
+
 .brand {
   display: flex;
   align-items: center;
