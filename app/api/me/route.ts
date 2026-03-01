@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUserIdFromRequest } from "@/lib/session";
 import { serverError, unauthorizedJson } from "@/lib/api";
+import { normalizeUploadUrl } from "@/lib/uploads";
 
 async function requireUser(req: NextRequest) {
   const userId = getUserIdFromRequest(req);
@@ -40,7 +41,7 @@ function buildUserResponse(user: any, prefs: any) {
       firstName: user.firstName,
       lastName: user.lastName,
       displayName: fullName(user.firstName, user.lastName),
-      avatarUrl: user.avatarUrl,
+      avatarUrl: normalizeUploadUrl(user.avatarUrl),
       paidStatus: user.paidStatus,
       billingUrl: (user as any).billingUrl ?? null,
       dailyCalorieGoal: user.dailyCalorieGoal,
@@ -115,10 +116,10 @@ export async function PATCH(req: NextRequest) {
 
     if (typeof body.avatarUrl === "string") {
       const avatarUrl = body.avatarUrl.trim();
-      if (avatarUrl && !avatarUrl.startsWith("/uploads/")) {
+      if (avatarUrl && !normalizeUploadUrl(avatarUrl)) {
         return NextResponse.json({ error: "avatarUrl must reference an uploaded image" }, { status: 400 });
       }
-      userUpdate.avatarUrl = avatarUrl || null;
+      userUpdate.avatarUrl = normalizeUploadUrl(avatarUrl);
     }
 
     if (body.dailyCalorieGoal === null) {

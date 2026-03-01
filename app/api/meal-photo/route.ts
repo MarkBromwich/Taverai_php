@@ -6,7 +6,7 @@ import path from "path";
 import crypto from "crypto";
 import { getUserIdFromRequest } from "@/lib/session";
 import { serverError, unauthorizedJson } from "@/lib/api";
-import { validateImageUpload } from "@/lib/uploads";
+import { buildUploadUrl, getUploadsDir, validateImageUpload } from "@/lib/uploads";
 
 function createdAtFromYMD(ymd: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
     }
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    const uploadsDir = getUploadsDir();
     await fs.mkdir(uploadsDir, { recursive: true });
 
     const id = crypto.randomBytes(12).toString("hex");
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const absPath = path.join(uploadsDir, filename);
     await fs.writeFile(absPath, validated.buffer);
 
-    const publicUrl = `/uploads/${filename}`;
+    const publicUrl = buildUploadUrl(filename);
     const createdAt = ymd ? createdAtFromYMD(ymd) : null;
 
     const entry = await prisma.foodEntry.create({

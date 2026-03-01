@@ -1,8 +1,35 @@
+import path from "path";
+
 const ALLOWED_IMAGE_TYPES = new Map<string, string>([
   ["image/jpeg", ".jpg"],
   ["image/png", ".png"],
   ["image/webp", ".webp"],
 ]);
+
+export function getUploadsDir() {
+  return path.join(process.cwd(), "uploads");
+}
+
+export function buildUploadUrl(filename: string) {
+  return `/api/uploads/${encodeURIComponent(filename)}`;
+}
+
+export function extractUploadFilename(url: string | null | undefined) {
+  const value = String(url ?? "").trim();
+  if (!value) return null;
+  if (value.startsWith("/api/uploads/")) {
+    return decodeURIComponent(value.slice("/api/uploads/".length));
+  }
+  if (value.startsWith("/uploads/")) {
+    return decodeURIComponent(value.slice("/uploads/".length));
+  }
+  return null;
+}
+
+export function normalizeUploadUrl(url: string | null | undefined) {
+  const filename = extractUploadFilename(url);
+  return filename ? buildUploadUrl(filename) : null;
+}
 
 export async function validateImageUpload(
   file: unknown,
