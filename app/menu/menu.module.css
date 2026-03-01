@@ -2,6 +2,7 @@
   max-width: 1100px;
   margin: 0 auto;
   padding: 24px;
+  width: 100%;
 }
 
 .head {
@@ -863,7 +864,8 @@
 
   .darkBtn,
   .compareBtn,
-  .logBtn {
+  .logBtn,
+  .clearBtn {
     min-width: 0;
     width: 100%;
   }
@@ -884,11 +886,11 @@
 
 @media (max-width: 720px) {
   .page {
-    padding: 18px;
+    padding: 18px 16px;
   }
 
   .compareTabs {
-    width: calc(100% - 28px);
+    width: calc(100% - 20px);
   }
 
   .compareTab {
@@ -919,7 +921,8 @@
   }
 
   .compareTable {
-    grid-template-columns: 1.1fr 1fr 1fr;
+    grid-template-columns: 1fr;
+    gap: 0;
   }
 
   .singleMealStats {
@@ -931,6 +934,7 @@
   .tableValue {
     padding: 12px 10px;
     font-size: 13px;
+    border-right: 0;
   }
 
   .inlineField {
@@ -940,5 +944,51 @@
   .plannerControls,
   .plannerBottomGrid {
     grid-template-columns: 1fr;
+  }
+
+  .optionHead,
+  .shoppingHead,
+  .resultFooter,
+  .cardHead {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .winnerReasons {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .compareHero {
+    padding: 24px 16px 16px;
+  }
+
+  .searchBar,
+  .abShell,
+  .compareActions,
+  .resultBlock {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+
+  .compareTabs {
+    width: calc(100% - 32px);
+  }
+
+  .compareTab {
+    font-size: 14px;
+    padding: 10px 6px;
+  }
+
+  .uploadTile {
+    min-height: 180px;
+  }
+
+  .darkBtn,
+  .compareBtn,
+  .clearBtn,
+  .logBtn {
+    width: 100%;
   }
 }

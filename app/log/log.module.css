@@ -9,6 +9,7 @@
   padding: 24px;
   max-width: 1180px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .headerRow {
@@ -96,6 +97,10 @@
 }
 
 @media (max-width: 640px) {
+  .container {
+    padding: 18px 16px;
+  }
+
   .headerRow {
     flex-direction: column;
     align-items: flex-start;
@@ -108,6 +113,11 @@
   .streakStat {
     align-items: flex-start;
     text-align: left;
+  }
+
+  .streakLine {
+    white-space: normal;
+    flex-wrap: wrap;
   }
 }
 
@@ -577,6 +587,35 @@
 @media (max-width: 900px) {
   .compCardsGrid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .foodItemTop {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .foodItemActions {
+    margin-left: 0;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .btnRow {
+    flex-wrap: wrap;
+  }
+
+  .btnRow > button {
+    min-width: calc(50% - 6px);
+    flex: 1 1 calc(50% - 6px);
+  }
+}
+
+@media (max-width: 520px) {
+  .btnRow > button {
+    min-width: 100%;
+    flex-basis: 100%;
   }
 }
 

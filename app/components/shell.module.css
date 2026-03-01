@@ -10,6 +10,7 @@
   max-width: 1180px;
   margin: 0 auto;
   padding: 0 24px;
+  width: 100%;
 }
 
 /* ✅ Add this: makes pages not slide under fixed bottom nav (mobile only) */
@@ -212,6 +213,12 @@
 @media (max-width: 860px) {
   .footer {
     display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .shell {
+    padding: 0 16px;
   }
 }
 

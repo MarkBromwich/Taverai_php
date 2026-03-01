@@ -6,6 +6,7 @@
   padding: 24px;
   max-width: 960px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .header {
@@ -205,6 +206,10 @@
 }
 
 @media (max-width: 720px) {
+  .container {
+    padding: 18px 16px;
+  }
+
   .fieldGrid,
   .macroBuilder {
     grid-template-columns: 1fr;
@@ -212,5 +217,10 @@
 
   .gaugeRow {
     grid-template-columns: 1fr;
+  }
+
+  .planItem {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

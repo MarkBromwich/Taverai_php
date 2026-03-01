@@ -5,10 +5,18 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
+    "export": "prisma generate && next build && next export",
+    "cap:copy": "npm run export && npx cap copy",
+    "cap:sync": "npm run export && npx cap sync",
+    "cap:open:ios": "npx cap open ios",
+    "cap:open:android": "npx cap open android",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@capacitor/cli": "^8.1.0",
+    "@capacitor/core": "^8.1.0",
+    "@capacitor/ios": "^8.1.0",
     "@prisma/client": "^6.19.2",
     "bcrypt": "^6.0.0",
     "cookie": "^1.1.1",
