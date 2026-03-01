@@ -673,12 +673,80 @@
     min-width: calc(50% - 6px);
     flex: 1 1 calc(50% - 6px);
   }
+
+  .xLabels {
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  .pills {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .rangeSelect {
+    max-width: 100%;
+  }
 }
 
 @media (max-width: 520px) {
+  .trendTabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .trendTab {
+    width: 100%;
+    text-align: center;
+    padding: 8px 6px;
+    font-size: 11px;
+  }
+
+  .pills {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .breakdownLegend {
+    flex-wrap: wrap;
+    white-space: normal;
+    overflow-x: visible;
+    row-gap: 6px;
+  }
+
+  .breakdownRow {
+    padding: 10px;
+  }
+
+  .nutrientGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .nutrientChip,
+  .ratioChip {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .heatStrip {
+    gap: 4px;
+  }
+
+  .heatTrack {
+    max-width: 22px;
+    height: 40px;
+  }
+
   .btnRow > button {
     min-width: 100%;
     flex-basis: 100%;
+  }
+
+  .inlineInfoBubble {
+    width: min(220px, 78vw);
+    right: auto;
+    left: 0;
   }
 }
 
