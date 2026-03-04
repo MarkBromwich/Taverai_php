@@ -49,6 +49,87 @@ function scale(n: number | null | undefined, factor: number) {
   return Math.round(n * factor);
 }
 
+async function loadImageElement(file: File): Promise<HTMLImageElement> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.decoding = "async";
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Image decode failed"));
+      img.src = url;
+    });
+    return img;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function drawImageToCanvas(file: File, maxSide = 1600): Promise<HTMLCanvasElement | null> {
+  try {
+    const img = await loadImageElement(file);
+    const longestSide = Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height, 1);
+    const scaleFactor = Math.min(1, maxSide / longestSide);
+    const width = Math.max(1, Math.round((img.naturalWidth || img.width) * scaleFactor));
+    const height = Math.max(1, Math.round((img.naturalHeight || img.height) * scaleFactor));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, width, height);
+    return canvas;
+  } catch {
+    return null;
+  }
+}
+
+async function normalizePhotoFile(file: File): Promise<File> {
+  const needsNormalization =
+    !["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 4 * 1024 * 1024;
+  if (!needsNormalization) return file;
+
+  const canvas = await drawImageToCanvas(file, 1600);
+  if (!canvas) return file;
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob((value) => resolve(value), "image/jpeg", 0.88)
+  );
+  if (!blob) return file;
+
+  const baseName = file.name.replace(/\.[^.]+$/, "") || "photo";
+  return new File([blob], `${baseName}.jpg`, {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  });
+}
+
+async function detectBarcodeFromFile(file: File): Promise<string | null> {
+  const Detector = (globalThis as any).BarcodeDetector;
+  if (!Detector || typeof document === "undefined") return null;
+
+  try {
+    const detector = new Detector({
+      formats: [
+        "ean_13",
+        "ean_8",
+        "upc_a",
+        "upc_e",
+        "code_128",
+        "code_39",
+        "qr_code",
+      ],
+    });
+    const canvas = await drawImageToCanvas(file, 1400);
+    if (!canvas) return null;
+    const results = await detector.detect(canvas);
+    const raw = results?.[0]?.rawValue;
+    return typeof raw === "string" && raw.trim() ? raw.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 /* -----------------------------
    Component
 ------------------------------ */
@@ -75,91 +156,6 @@ export default function AddFoodCard(props: {
   const canSubmit = newText.trim().length > 0 && !submitting;
 
   /* -----------------------------
-     Barcode
-  ------------------------------ */
-
-  const [mode, setMode] = useState<"none" | "manual" | "scan">("none");
-  const [barcode, setBarcode] = useState("");
-  const [bMsg, setBMsg] = useState<string | null>(null);
-  const [bLoading, setBLoading] = useState(false);
-
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const rafRef = useRef<number | null>(null);
-
-  function stopScan() {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    if (streamRef.current)
-      streamRef.current.getTracks().forEach((t) => t.stop());
-    if (videoRef.current) videoRef.current.srcObject = null;
-  }
-
-  async function submitBarcode(code: string) {
-    const c = code.trim();
-    if (!c) return;
-
-    setBLoading(true);
-    setBMsg(null);
-
-    try {
-      await onBarcode(c);
-      setBarcode("");
-      setMode("none");
-      setBMsg("Saved ✅");
-    } catch (e: any) {
-      setBMsg(e?.message ?? "Barcode failed.");
-    } finally {
-      setBLoading(false);
-      stopScan();
-    }
-  }
-
-  async function startScan() {
-    const BD = (globalThis as any).BarcodeDetector;
-    if (!BD) {
-      setMode("manual");
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-      });
-
-      streamRef.current = stream;
-      setMode("scan");
-
-      const v = videoRef.current;
-      if (!v) return;
-
-      v.srcObject = stream;
-      await v.play();
-
-      const detector = new BD();
-
-      const tick = async () => {
-        if (!videoRef.current) return;
-
-        const codes = await detector.detect(videoRef.current);
-        if (codes?.length) {
-          const raw = codes[0]?.rawValue;
-          if (raw) {
-            stopScan();
-            await submitBarcode(raw);
-            return;
-          }
-        }
-
-        rafRef.current = requestAnimationFrame(tick);
-      };
-
-      rafRef.current = requestAnimationFrame(tick);
-    } catch {
-      setMode("manual");
-    }
-  }
-
-  /* -----------------------------
      Meal Photo
   ------------------------------ */
 
@@ -180,6 +176,7 @@ export default function AddFoodCard(props: {
   const mealLibraryRef = useRef<HTMLInputElement | null>(null);
 
   function clearMeal() {
+    if (mealPreviewUrl) URL.revokeObjectURL(mealPreviewUrl);
     setMealFile(null);
     setMealPreviewUrl(null);
     setMealBase(null);
@@ -191,12 +188,24 @@ export default function AddFoodCard(props: {
 
   async function setMealFromFile(f: File) {
     setMealDraftLoading(true);
-    setMealPreviewUrl(URL.createObjectURL(f));
-    setMealFile(f);
+    setMealMsg(null);
     setMealPickerOpen(false);
 
     try {
-      const result = await onMealPhoto(f);
+      const preparedFile = await normalizePhotoFile(f);
+      const barcode = await detectBarcodeFromFile(preparedFile);
+      if (barcode) {
+        await onBarcode(barcode);
+        clearMeal();
+        setMealMsg("Barcode detected and saved ✅");
+        return;
+      }
+
+      if (mealPreviewUrl) URL.revokeObjectURL(mealPreviewUrl);
+      setMealPreviewUrl(URL.createObjectURL(preparedFile));
+      setMealFile(preparedFile);
+
+      const result = await onMealPhoto(preparedFile);
       setMealBase(result);
       setPortion(1);
 
@@ -267,16 +276,9 @@ export default function AddFoodCard(props: {
 
         <button
           className={`${styles.btn} ${styles.btnPrimary}`}
-          onClick={startScan}
-        >
-          Scan barcode
-        </button>
-
-        <button
-          className={`${styles.btn} ${styles.btnPrimary}`}
           onClick={() => setMealPickerOpen((v) => !v)}
         >
-          Meal photo
+          Use photo
         </button>
       </div>
 
@@ -294,7 +296,7 @@ export default function AddFoodCard(props: {
             className={`${styles.btn} ${styles.btnPrimary}`}
             onClick={() => mealLibraryRef.current?.click()}
           >
-            Choose file
+            Choose photo
           </button>
         </div>
       )}
@@ -321,6 +323,8 @@ export default function AddFoodCard(props: {
           if (f) void setMealFromFile(f);
         }}
       />
+
+      {mealMsg ? <div className={styles.muted}>{mealMsg}</div> : null}
 
       {/* Draft UI */}
       {mealDraft && (

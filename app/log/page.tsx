@@ -64,6 +64,7 @@ function addDays(ymd: string, delta: number) {
 }
 
 function friendlyDateLabel(ymd: string) {
+  if (!ymd) return "Today";
   const d = fromYMD(ymd);
   const today = toYMD(new Date());
   const yesterday = addDays(today, -1);
@@ -133,8 +134,8 @@ function computeLoggingStreak(entries: EntryForStreak[]) {
 --------------------------------*/
 
 export default function LogPage() {
-  const todayYMD = useMemo(() => toYMD(new Date()), []);
-  const [ymd, setYmd] = useState(todayYMD);
+  const [todayYMD, setTodayYMD] = useState("");
+  const [ymd, setYmd] = useState("");
 
   const [me, setMe] = useState<MeUser | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -145,11 +146,17 @@ export default function LogPage() {
   const [planTemplateSlug, setPlanTemplateSlug] = useState<string | null>(null);
 
   // prevent paging into the future
-  const todayKey = todayYMD;
-  const canGoNext = ymd < todayKey;
+  const todayKey = todayYMD || ymd;
+  const canGoNext = Boolean(ymd && todayKey && ymd < todayKey);
 
   // Define which add method is visible
   const [addMode, setAddMode] = useState<"quick" | "manual">("quick");
+
+  useEffect(() => {
+    const today = toYMD(new Date());
+    setTodayYMD(today);
+    setYmd((current) => current || today);
+  }, []);
 
   /* ---- helpers ---- */
 
@@ -229,6 +236,11 @@ export default function LogPage() {
   /* ---- Load entries (for selected day only) ---- */
   useEffect(() => {
     let cancelled = false;
+    if (!ymd) {
+      return () => {
+        cancelled = true;
+      };
+    }
 
     async function loadEntries() {
       try {
@@ -738,7 +750,7 @@ export default function LogPage() {
         </div>
 
         <div className={styles.muted} style={{ marginTop: 6 }}>
-          Quick add is fast. Manual nutrition is best when you have label numbers.
+          Use quick text for a fast entry, manual nutrition for detailed label numbers, or upload a photo of a meal or barcode for scanned data.
         </div>
 
         <div className={styles.btnRow} style={{ marginTop: 12 }}>

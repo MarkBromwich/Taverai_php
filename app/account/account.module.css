@@ -115,34 +115,35 @@
 
 .card {
   margin-top: 14px;
+  padding: 18px;
   border-radius: var(--radius);
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
   backdrop-filter: blur(12px);
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
-  overflow: hidden;
 }
 
 .card:hover {
   transform: translateY(-2px);
   border-color: var(--border-strong);
-  box-shadow: var(--shadow-strong);
+  box-shadow: 0 26px 55px rgba(0, 0, 0, 0.55);
 }
 
 .cardTitle {
-  padding: 14px 18px;
-  font-size: 12px;
+  padding: 0;
+  margin-bottom: 14px;
+  font-size: 16px;
   font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-3);
+  letter-spacing: -0.02em;
+  text-transform: none;
+  color: var(--text);
+  border-bottom: 0;
+  background: transparent;
 }
 
 .cardBody {
-  padding: 18px;
+  padding: 0;
   display: grid;
   gap: 18px; /* 👈 consistent vertical spacing */
 }

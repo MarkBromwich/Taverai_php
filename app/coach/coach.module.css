@@ -211,12 +211,12 @@
 }
 
 .axis {
-  stroke: rgba(255,255,255,0.12);
+  stroke: var(--chart-axis);
   stroke-width: 1;
 }
 
 .line {
-  stroke: rgba(255,255,255,0.78);
+  stroke: var(--chart-line);
   stroke-width: 2.2;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -228,13 +228,13 @@
 }
 
 .dotTooltipBg {
-  fill: rgba(12, 18, 30, 0.95);
-  stroke: rgba(255,255,255,0.16);
+  fill: var(--tooltip-bg);
+  stroke: var(--tooltip-border);
   stroke-width: 1;
 }
 
 .dotTooltipText {
-  fill: rgba(255,255,255,0.94);
+  fill: var(--tooltip-text);
   font-size: 10px;
   font-weight: 800;
   dominant-baseline: middle;
@@ -513,7 +513,7 @@
   padding: 0;
   font-style: italic;
   font-weight: 800;
-  color: rgba(255,255,255,0.82);
+  color: var(--muted);
   cursor: pointer;
 }
 
@@ -524,9 +524,9 @@
   width: min(260px, 72vw);
   padding: 8px 10px;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(12, 18, 30, 0.96);
-  color: rgba(255,255,255,0.92);
+  border: 1px solid var(--tooltip-border);
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
   font-size: 12px;
   line-height: 1.35;
   box-shadow: 0 8px 24px rgba(0,0,0,0.35);

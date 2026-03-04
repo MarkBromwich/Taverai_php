@@ -24,6 +24,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Taverai uses the camera to capture meal photos and scan product barcodes for nutrition logging.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Taverai uses your photo library so you can choose meal photos or package images for nutrition logging.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

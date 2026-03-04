@@ -212,7 +212,7 @@
 }
 
 .footerLink:hover {
-  color: var(--accent);
+  color: var(--accent-3);
 }
 
 .footerBottom {

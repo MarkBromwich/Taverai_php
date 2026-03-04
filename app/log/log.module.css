@@ -215,7 +215,7 @@
 }
 
 .calorieTrack {
-  stroke: var(--gauge-track, rgba(255,255,255,0.14));
+  stroke: var(--gauge-track, var(--gauge-track-neutral));
   stroke-linecap: round;
 }
 
@@ -225,7 +225,7 @@
 }
 
 .calorieNeedle {
-  stroke: var(--gauge-needle, rgba(255,255,255,0.85));
+  stroke: var(--gauge-needle, var(--gauge-needle-neutral));
   stroke-width: 2.8;
   stroke-linecap: round;
 }
@@ -273,7 +273,7 @@
 .macroTitle {
   font-size: 13px;
   font-weight: 900;
-  color: rgba(255,255,255,0.90);
+  color: var(--text);
 }
 
 .macroHint {
@@ -319,11 +319,11 @@
   flex-wrap: wrap;
 
   font-size: 13px;
-  color: rgba(255,255,255,0.80);
+  color: var(--muted);
 }
 
 .macroMeta strong {
-  color: rgba(255,255,255,0.92);
+  color: var(--text);
 }
 
 .macroDotCarb,
@@ -387,7 +387,7 @@
   box-sizing: border-box;
   margin-top: 8px;
   overflow: auto;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .foodListItem {
@@ -485,11 +485,11 @@
 
   resize: none;
   outline: none;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .textarea::placeholder {
-  color: rgba(255,255,255,0.45); /* 👈 lighter placeholder */
+  color: var(--muted);
 }
 
 
@@ -639,12 +639,12 @@
 }
 
 .compTrack {
-  stroke: var(--gauge-track, rgba(255,255,255,0.14));
+  stroke: var(--gauge-track, var(--gauge-track-neutral));
   stroke-linecap: round;
 }
 
 .compFill {
-  stroke: var(--gauge-fill, rgba(255,255,255,0.22));
+  stroke: var(--gauge-fill, var(--gauge-fill-neutral));
   stroke-linecap: round;
 }
 
@@ -1091,13 +1091,13 @@
 .macroLabel {
   font-size: 13px;
   font-weight: 900;
-  color: rgba(255,255,255,0.92);
+  color: var(--text);
 }
 
 .macroMeta {
   margin-top: 2px;
   font-size: 12px;
-  color: rgba(255,255,255,0.62);
+  color: var(--muted);
   line-height: 1.25;
 }
 

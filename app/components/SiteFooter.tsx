@@ -5,6 +5,7 @@ import { Book, Brain, Clipboard, User, UtensilsCrossed } from "lucide-react";
 import styles from "./shell.module.css";
 
 export default function SiteFooter() {
+  const year = 2026;
   return (
     <footer className={styles.footer}>
       <div className={styles.shell}>
@@ -46,7 +47,7 @@ export default function SiteFooter() {
 
         <div className={styles.footerBottom}>
           <span className={styles.footerMuted}>
-            © {new Date().getFullYear()} Food App
+            © {year} Food App
           </span>
         </div>
       </div>

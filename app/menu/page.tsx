@@ -136,7 +136,7 @@ export default function MenuPage() {
   const [me, setMe] = useState<MeUser | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
 
-  const [compareMode, setCompareMode] = useState<"quick" | "restaurant" | "barcode">("quick");
+  const [compareMode, setCompareMode] = useState<"text" | "image">("text");
   const [restaurant, setRestaurant] = useState("");
   const [optionA, setOptionA] = useState("");
   const [optionB, setOptionB] = useState("");
@@ -204,7 +204,7 @@ export default function MenuPage() {
   const compared = useMemo(() => compareResult?.options ?? [], [compareResult]);
   const comparedA = compared.find((x) => x.optionIndex === 0) ?? null;
   const comparedB = compared.find((x) => x.optionIndex === 1) ?? null;
-  const compareUsesImages = compareMode !== "quick";
+  const compareUsesImages = compareMode === "image";
   const isSingleImageAnalysis = compareUsesImages && !!comparedA && !comparedB;
   const winner = useMemo(() => compareResult?.ranked?.[0] ?? null, [compareResult]);
   const loser = winner?.optionIndex === 0 ? comparedB : winner?.optionIndex === 1 ? comparedA : null;
@@ -320,6 +320,7 @@ export default function MenuPage() {
     setCompareError(null);
     setLogMessage(null);
     try {
+      const trimmedContext = restaurant.trim();
       let options: string[] = [];
       let providedNutrition: Array<Record<string, string | number | null>> = [];
 
@@ -332,12 +333,12 @@ export default function MenuPage() {
         if (optionAImage) {
           const scanA = optionAScan ?? (await scanMealImage(optionAImage));
           scans.push(scanA);
-          optionLabels.push([restaurant.trim(), scanA.title].filter(Boolean).join(" — "));
+          optionLabels.push([trimmedContext, scanA.title].filter(Boolean).join(" — "));
         }
         if (optionBImage) {
           const scanB = optionBScan ?? (await scanMealImage(optionBImage));
           scans.push(scanB);
-          optionLabels.push([restaurant.trim(), scanB.title].filter(Boolean).join(" — "));
+          optionLabels.push([trimmedContext, scanB.title].filter(Boolean).join(" — "));
         }
         options = optionLabels;
         providedNutrition = scans;
@@ -346,14 +347,13 @@ export default function MenuPage() {
         const b = optionB.trim();
         if (!a || !b) throw new Error("Enter both options before comparing.");
         options = [
-          [restaurant.trim(), a, optionADetails.trim()].filter(Boolean).join(" — "),
-          [restaurant.trim(), b, optionBDetails.trim()].filter(Boolean).join(" — "),
+          [trimmedContext, a, optionADetails.trim()].filter(Boolean).join(" — "),
+          [trimmedContext, b, optionBDetails.trim()].filter(Boolean).join(" — "),
         ];
       }
 
       const context = [
-        compareMode === "restaurant" && restaurant.trim() ? `Restaurant: ${restaurant.trim()}` : "",
-        compareMode === "barcode" ? "Compare packaged or prepared grocery items." : "",
+        compareMode === "image" && trimmedContext ? `Source: ${trimmedContext}` : "",
         compareUsesImages ? "Use provided scanned nutrition from uploaded images." : "",
         plan?.name ? `User plan: ${plan.name}` : "",
       ]
@@ -557,9 +557,9 @@ export default function MenuPage() {
   return (
     <main className={styles.page}>
       <div className={styles.head}>
-        <h1 className={styles.h1}>Menu Analyzer</h1>
+        <h1 className={styles.h1}>Meal Planner &amp; Compare</h1>
         <div className={styles.sub}>
-          Compare meals before you order and build plan-aware meal ideas.
+          Compare meals, build plan-aware menus, and save the ones worth repeating.
         </div>
       </div>
 
@@ -567,31 +567,24 @@ export default function MenuPage() {
         <div className={styles.compareHero}>
           <h2 className={styles.compareTitle}>Compare Meals</h2>
           <div className={styles.compareSubtitle}>
-            Pick the option that fits your plan &amp; goals, or see how a meal fits your plan.
+            Compare meals to see what best fits your plan.
           </div>
         </div>
 
         <div className={styles.compareTabs}>
           <button
             type="button"
-            className={`${styles.compareTab} ${compareMode === "quick" ? styles.compareTabActive : ""}`}
-            onClick={() => setCompareMode("quick")}
+            className={`${styles.compareTab} ${compareMode === "text" ? styles.compareTabActive : ""}`}
+            onClick={() => setCompareMode("text")}
           >
-            Quick
+            Text Compare
           </button>
           <button
             type="button"
-            className={`${styles.compareTab} ${compareMode === "restaurant" ? styles.compareTabActive : ""}`}
-            onClick={() => setCompareMode("restaurant")}
+            className={`${styles.compareTab} ${compareMode === "image" ? styles.compareTabActive : ""}`}
+            onClick={() => setCompareMode("image")}
           >
-            Restaurant
-          </button>
-          <button
-            type="button"
-            className={`${styles.compareTab} ${compareMode === "barcode" ? styles.compareTabActive : ""}`}
-            onClick={() => setCompareMode("barcode")}
-          >
-            Barcode
+            Image Compare
           </button>
         </div>
 
@@ -599,12 +592,11 @@ export default function MenuPage() {
           <span className={styles.searchIcon}>⌕</span>
           <input
             className={styles.searchInput}
+            autoComplete="off"
             placeholder={
-              compareMode === "restaurant"
-                ? "Where are you? (e.g. Taco Bell)"
-                : compareMode === "barcode"
-                ? "Store or product context (optional)"
-                : "Where are you? (optional)"
+              compareMode === "image"
+                ? "Restaurant, menu, or package context (optional)"
+                : "Restaurant or menu context (optional)"
             }
             value={restaurant}
             onChange={(e) => setRestaurant(e.target.value)}
@@ -614,18 +606,16 @@ export default function MenuPage() {
 
         <div className={styles.abShell}>
           <div className={styles.optionPanel}>
-            <div className={styles.optionLabel}>Option A</div>
+            <div className={styles.optionLabel}>Meal A</div>
             {compareUsesImages ? (
               <>
                 <label className={styles.uploadTile}>
                   {optionAPreview ? (
-                    <img src={optionAPreview} alt="Option A upload" className={styles.uploadPreview} />
+                    <img src={optionAPreview} alt="Meal A upload" className={styles.uploadPreview} />
                   ) : (
                     <div className={styles.uploadEmpty}>
                       <span className={styles.uploadPlus}>+</span>
-                      <span className={styles.uploadText}>
-                        Upload {compareMode === "barcode" ? "product" : "meal"} image
-                      </span>
+                      <span className={styles.uploadText}>Upload meal image</span>
                     </div>
                   )}
                   <input
@@ -647,7 +637,7 @@ export default function MenuPage() {
               <>
                 <input
                   className={styles.choiceInput}
-                  placeholder="#1 Crunchwrap Supreme Combo"
+                  placeholder="Meal combo one"
                   value={optionA}
                   onChange={(e) => setOptionA(e.target.value)}
                 />
@@ -661,7 +651,7 @@ export default function MenuPage() {
                 {showADetails ? (
                   <textarea
                     className={styles.detailInput}
-                    placeholder="Combo details, sides, drink, sauces, or portion notes"
+                    placeholder="Meal details, sides, sauces, drink, or portion notes"
                     value={optionADetails}
                     onChange={(e) => setOptionADetails(e.target.value)}
                   />
@@ -671,18 +661,16 @@ export default function MenuPage() {
           </div>
           <div className={styles.vs}>{compareUsesImages && (!optionAImage || !optionBImage) ? "OR" : "VS"}</div>
           <div className={styles.optionPanel}>
-            <div className={styles.optionLabel}>Option B</div>
+            <div className={styles.optionLabel}>Meal B</div>
             {compareUsesImages ? (
               <>
                 <label className={styles.uploadTile}>
                   {optionBPreview ? (
-                    <img src={optionBPreview} alt="Option B upload" className={styles.uploadPreview} />
+                    <img src={optionBPreview} alt="Meal B upload" className={styles.uploadPreview} />
                   ) : (
                     <div className={styles.uploadEmpty}>
                       <span className={styles.uploadPlus}>+</span>
-                      <span className={styles.uploadText}>
-                        Upload {compareMode === "barcode" ? "product" : "meal"} image
-                      </span>
+                      <span className={styles.uploadText}>Upload meal image</span>
                     </div>
                   )}
                   <input
@@ -704,7 +692,7 @@ export default function MenuPage() {
               <>
                 <input
                   className={styles.choiceInput}
-                  placeholder="#2 Chicken Quesadilla Combo"
+                  placeholder="Meal combo two"
                   value={optionB}
                   onChange={(e) => setOptionB(e.target.value)}
                 />
@@ -718,7 +706,7 @@ export default function MenuPage() {
                 {showBDetails ? (
                   <textarea
                     className={styles.detailInput}
-                    placeholder="Combo details, sides, drink, sauces, or portion notes"
+                    placeholder="Meal details, sides, sauces, drink, or portion notes"
                     value={optionBDetails}
                     onChange={(e) => setOptionBDetails(e.target.value)}
                   />
@@ -776,7 +764,7 @@ export default function MenuPage() {
                     </>
                   ) : (
                     <>
-                      Winner: {winner.optionIndex === 0 ? "Option A" : "Option B"} - <span>{winner.name}</span>
+                      Winner: {winner.optionIndex === 0 ? "Meal A" : "Meal B"} - <span>{winner.name}</span>
                     </>
                   )}
                 </div>
@@ -816,8 +804,8 @@ export default function MenuPage() {
             ) : (
               <div className={styles.compareTable}>
                 <div className={styles.tableHead} />
-                <div className={styles.tableHead}>Option A</div>
-                <div className={styles.tableHead}>Option B</div>
+                <div className={styles.tableHead}>Meal A</div>
+                <div className={styles.tableHead}>Meal B</div>
 
                 <div className={styles.tableLabel}>Calories:</div>
                 <div className={styles.tableValue}>{formatNum(comparedA?.calories, " kcal")}</div>

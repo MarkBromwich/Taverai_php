@@ -27,6 +27,12 @@
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: 0 26px 55px rgba(0, 0, 0, 0.55);
+}
+
 
 .card + .card {
   margin-top: 20px;
