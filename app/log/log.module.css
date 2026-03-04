@@ -543,14 +543,21 @@
   font-size: 14px;
   font-weight: 900;
   color: var(--text);
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 
   transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: var(--shadow-sm);
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: var(--shadow-sm);
+  }
 }
 
 .btnPrimary {
