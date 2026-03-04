@@ -343,6 +343,26 @@
   }
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .navLink,
+  .tab {
+    transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+    transform: none;
+  }
+
+  .navLink:hover,
+  .tab:hover,
+  .navLink:active,
+  .tab:active {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .tab svg {
+    transition: none;
+  }
+}
+
 /* Hide brand text on small screens */
 @media (max-width: 768px) {
   .brandText {

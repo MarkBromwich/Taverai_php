@@ -258,6 +258,21 @@ video {
   transform: none;
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .authBtn {
+    transition: background 120ms ease, opacity 120ms ease;
+    transform: none;
+  }
+
+  .authBtn:hover:not(:disabled),
+  .authBtn:active:not(:disabled) {
+    transform: none;
+    box-shadow:
+      0 8px 20px rgba(42, 167, 163, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+}
+
 /* =========================
    Hide top bar on small screens
    ========================= */

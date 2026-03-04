@@ -237,6 +237,23 @@
   border-color: rgba(239,68,68,0.38);
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .btn,
+  .btnPrimary,
+  .btnDanger {
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn:hover,
+  .btnPrimary:hover,
+  .btnDanger:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
 .formGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

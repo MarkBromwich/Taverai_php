@@ -343,6 +343,17 @@
   cursor: not-allowed;
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .btn,
+  .togglePill,
+  .recipeLink,
+  .archiveBtn {
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
 .errorText {
   margin: 12px 32px 0;
   font-size: 13px;

@@ -560,6 +560,23 @@
   }
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .btn,
+  .authBtn,
+  .foodItemActionBtn {
+    transition: background 120ms ease, border-color 120ms ease, opacity 120ms ease;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .foodItemActionBtn:hover:not(:disabled),
+  .authBtn:hover:not(:disabled),
+  .authBtn:active:not(:disabled) {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
 .btnPrimary {
   background: linear-gradient(180deg, rgba(79,140,255,0.95), rgba(79,140,255,0.70));
   border-color: rgba(79,140,255,0.40);

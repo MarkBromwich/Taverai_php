@@ -488,6 +488,19 @@
   cursor: not-allowed;
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .btn {
+    transition: background 120ms ease, border-color 120ms ease, opacity 120ms ease;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn:hover:not(:disabled) {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
 .answerTitle {
   display: flex;
   align-items: center;

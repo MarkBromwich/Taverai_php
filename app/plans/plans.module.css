@@ -100,6 +100,21 @@
   transform: none;
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .buttonPrimary,
+  .buttonSecondary {
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .buttonPrimary:hover:not(:disabled),
+  .buttonSecondary:hover:not(:disabled) {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
 .planItem {
   padding: 14px;
   border-radius: var(--radius-sm);
