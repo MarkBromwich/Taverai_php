@@ -1,0 +1,23 @@
+{
+  "appId": "com.taverai.app",
+  "appName": "Taverai",
+  "webDir": "public",
+  "server": {
+    "url": "https://www.bromwichphotography.com/taverai_app/",
+    "cleartext": false
+  },
+  "ios": {
+    "scheme": "Taverai"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#070d16",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#070d16"
+    }
+  }
+}

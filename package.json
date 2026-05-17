@@ -1,45 +1,19 @@
 {
-  "name": "food_app",
-  "version": "0.1.0",
+  "name": "taverai-mobile-wrapper",
+  "version": "2.0.0",
   "private": true,
+  "description": "Capacitor wrapper for the hosted Taverai PHP app.",
   "scripts": {
-    "dev": "next dev",
-    "build": "prisma generate && next build",
-    "export": "prisma generate && next build && next export",
-    "cap:copy": "npm run export && npx cap copy",
-    "cap:sync": "npm run export && npx cap sync",
-    "cap:open:ios": "npx cap open ios",
-    "cap:open:android": "npx cap open android",
-    "start": "next start",
-    "lint": "eslint"
+    "cap:sync": "cap sync",
+    "cap:open:ios": "cap open ios",
+    "cap:run:ios": "cap run ios"
   },
   "dependencies": {
-    "@capacitor/cli": "^8.1.0",
-    "@capacitor/core": "^8.1.0",
-    "@capacitor/ios": "^8.1.0",
-    "@prisma/client": "^6.19.2",
-    "bcrypt": "^6.0.0",
-    "cookie": "^1.1.1",
-    "lucide-react": "^0.574.0",
-    "next": "^16.1.6",
-    "openai": "^6.22.0",
-    "prisma": "^6.19.2",
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/bcrypt": "^6.0.0",
-    "@types/cookie": "^0.6.0",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^4.1.1",
-    "eslint-config-next": "^0.2.4",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  },
-  "prisma": {
-    "seed": "node scripts/seedPlanTemplates.mjs"
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/ios": "^8.3.4",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2"
   }
 }

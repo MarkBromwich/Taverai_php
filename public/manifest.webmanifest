@@ -1,0 +1,30 @@
+{
+  "name": "Taverai",
+  "short_name": "Taverai",
+  "description": "AI-assisted diet tracking for logging meals, scoring plans, and improving habits.",
+  "start_url": "./index.php?path=log",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070d16",
+  "theme_color": "#070d16",
+  "categories": ["health", "food", "productivity"],
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

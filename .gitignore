@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+server.env.local
 
 # vercel
 .vercel
@@ -45,3 +47,9 @@ next-env.d.ts
 .env.local
 .env.*.local
 *.zip
+
+# user-generated/runtime data
+/public/uploads/*
+!/public/uploads/.htaccess
+/storage/logs/*
+!/storage/logs/.gitkeep
