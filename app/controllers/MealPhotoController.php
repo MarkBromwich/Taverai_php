@@ -36,9 +36,14 @@ class MealPhotoController extends Controller
             $createdAt = $ymd . ' ' . $this->requestTime((string) ($_POST['time'] ?? ''));
         }
 
+        $userDetails = trim((string) ($_POST['details'] ?? ''));
+        if (strlen($userDetails) > 500) {
+            $userDetails = substr($userDetails, 0, 500);
+        }
+
         $destination = $stored['path'];
         $imageUrl = $stored['url'];
-        $analysis = $this->analyzeMealPhoto($destination, $mime);
+        $analysis = $this->analyzeMealPhoto($destination, $mime, $userDetails);
         if (!is_array($analysis)) {
             $analysis = NutritionEstimator::fromPhotoFallback();
         }
@@ -54,6 +59,7 @@ class MealPhotoController extends Controller
             'mime' => $mime,
             'size' => $size,
             'originalName' => $originalName,
+            'userDetails' => $userDetails !== '' ? $userDetails : null,
         ];
         if (is_array($analysis)) {
             $parsed = array_merge($parsed, [
@@ -107,7 +113,7 @@ class MealPhotoController extends Controller
         ], 201);
     }
 
-    private function analyzeMealPhoto(string $absolutePath, string $mime): ?array
+    private function analyzeMealPhoto(string $absolutePath, string $mime, string $userDetails = ''): ?array
     {
         $client = new OpenAIClient();
         if (!$client->isConfigured()) {
@@ -120,6 +126,9 @@ class MealPhotoController extends Controller
         }
 
         $prompt = 'Analyze this meal image and return only valid JSON with keys: title, calories, proteinG, carbsG, fatG, sugarG, fiberG, satFatG, confidence, notes, items. Each item should include name, servings, foodGroup, calories, sugarG, addedSugarG, fiberG, satFatG, sodiumMg, tags.';
+        if ($userDetails !== '') {
+            $prompt .= ' The user provided these additional details about how the meal was made or what it contains, use them to refine the estimate: ' . $userDetails;
+        }
         return $client->chatJsonWithImage(
             (string) config('openai.meal_model', 'gpt-4o-mini'),
             'You are a nutrition estimation AI. Return only valid JSON with realistic meal estimates from the image. Be conservative and practical.',

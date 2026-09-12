@@ -747,14 +747,41 @@ body.is-offline [data-online-only] {
     transition: width 0.2s ease;
 }
 
+.macro-balance-row {
+    margin-top: 18px;
+}
+
+.macro-balance-row:first-of-type {
+    margin-top: 0;
+}
+
+.macro-balance-row + .macro-balance-row {
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+}
+
+.macro-balance-row-label {
+    display: block;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
 .macro-balance-bars {
     display: flex;
     overflow: hidden;
     width: 100%;
     height: 14px;
-    margin: 18px 0;
+    margin: 10px 0;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.11);
+}
+
+#macro-balance-target-bars {
+    height: 10px;
+    opacity: 0.85;
 }
 
 .macro-segment {
@@ -816,6 +843,14 @@ body.is-offline [data-online-only] {
 
 .macro-fat {
     --macro-color: var(--macro-fat);
+}
+
+.macro-sugar {
+    --macro-color: var(--danger);
+}
+
+.macro-fiber {
+    --macro-color: var(--success);
 }
 
 .macro-score {
@@ -1917,6 +1952,11 @@ body.is-offline [data-online-only] {
 .upload-panel {
     padding-top: 24px;
     border-top: 1px solid var(--border);
+}
+
+.add-food-ai-note {
+    margin-top: 4px;
+    font-style: italic;
 }
 
 #barcode-photo-file {

@@ -52,6 +52,7 @@ class EntriesController extends Controller
                 'dailyCalorieGoal' => $dailyGoal,
             ],
             'plan' => $primaryPlan,
+            'dietTargetPct' => $this->dietTargetPct($primaryPlan),
             'calorieTarget' => $calorieTarget,
             'selectedDate' => $selectedDate,
             'streakDays' => $streakDays,
@@ -60,6 +61,38 @@ class EntriesController extends Controller
             'month' => $this->windowMetrics($month),
             'calendar' => $this->buildCalendar($days, $selectedDate, 28),
         ]);
+    }
+
+    /**
+     * Converts the active plan's macro percentage ranges into a single target
+     * split (midpoint of each min/max range, normalized to 100%) so the log
+     * page can show what the chosen diet recommends alongside actual intake.
+     */
+    private function dietTargetPct(?array $plan): ?array
+    {
+        if (!is_array($plan) || strtoupper((string) ($plan['type'] ?? '')) === 'CALORIE') {
+            return null;
+        }
+
+        $profile = DietScoring::resolveProfile(
+            is_array($plan['config'] ?? null) ? $plan['config'] : null,
+            (string) ($plan['name'] ?? '')
+        );
+
+        $proteinMid = ((float) $profile['protein']['min'] + (float) $profile['protein']['max']) / 2;
+        $carbsMid = ((float) $profile['carbs']['min'] + (float) $profile['carbs']['max']) / 2;
+        $fatMid = ((float) $profile['fat']['min'] + (float) $profile['fat']['max']) / 2;
+        $sum = $proteinMid + $carbsMid + $fatMid;
+        if ($sum <= 0) {
+            return null;
+        }
+
+        return [
+            'label' => (string) ($profile['label'] ?? $plan['name'] ?? 'Your plan'),
+            'protein' => (int) round(($proteinMid / $sum) * 100),
+            'carbs' => (int) round(($carbsMid / $sum) * 100),
+            'fat' => (int) round(($fatMid / $sum) * 100),
+        ];
     }
 
     public function store(): void
@@ -321,6 +354,8 @@ class EntriesController extends Controller
             $days[$date]['totals']['proteinG'] += (float) ($entry['proteinG'] ?? 0);
             $days[$date]['totals']['carbsG'] += (float) ($entry['carbsG'] ?? 0);
             $days[$date]['totals']['fatG'] += (float) ($entry['fatG'] ?? 0);
+            $days[$date]['totals']['sugarG'] += $this->parsedNumber($entry, 'sugarG');
+            $days[$date]['totals']['fiberG'] += $this->parsedNumber($entry, 'fiberG');
 
             $score = $this->preferredScore($entry, $preferredPlanId);
             if ($score === null && $preferredPlan !== null) {
@@ -341,6 +376,8 @@ class EntriesController extends Controller
             $days[$date]['totals']['proteinG'] = round($day['totals']['proteinG'], 1);
             $days[$date]['totals']['carbsG'] = round($day['totals']['carbsG'], 1);
             $days[$date]['totals']['fatG'] = round($day['totals']['fatG'], 1);
+            $days[$date]['totals']['sugarG'] = round($day['totals']['sugarG'], 1);
+            $days[$date]['totals']['fiberG'] = round($day['totals']['fiberG'], 1);
             $days[$date]['score'] = $day['scoreCount'] > 0
                 ? (int) round($day['scoreTotal'] / $day['scoreCount'])
                 : null;
@@ -350,6 +387,17 @@ class EntriesController extends Controller
 
         ksort($days);
         return $days;
+    }
+
+    private function parsedNumber(array $entry, string $key): float
+    {
+        if (isset($entry['parsed'][$key]) && is_numeric($entry['parsed'][$key])) {
+            return (float) $entry['parsed'][$key];
+        }
+        if (isset($entry['parsed']['nutrition'][$key]) && is_numeric($entry['parsed']['nutrition'][$key])) {
+            return (float) $entry['parsed']['nutrition'][$key];
+        }
+        return 0.0;
     }
 
     private function preferredScore(array $entry, ?string $preferredPlanId): ?array
@@ -386,6 +434,8 @@ class EntriesController extends Controller
                 'proteinG' => 0,
                 'carbsG' => 0,
                 'fatG' => 0,
+                'sugarG' => 0,
+                'fiberG' => 0,
             ],
             'score' => null,
             'reasons' => [],

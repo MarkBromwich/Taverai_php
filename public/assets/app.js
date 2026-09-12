@@ -677,6 +677,8 @@
       const protein = Number(selectedDay.totals?.proteinG || 0);
       const carbs = Number(selectedDay.totals?.carbsG || 0);
       const fat = Number(selectedDay.totals?.fatG || 0);
+      const sugar = Number(selectedDay.totals?.sugarG || 0);
+      const fiber = Number(selectedDay.totals?.fiberG || 0);
       const score = selectedDay.score != null ? Number(selectedDay.score) : null;
       const tone = scoreTone(score);
 
@@ -700,12 +702,10 @@
       const dayLabel = document.getElementById("summary-day-label");
       const dateText = document.getElementById("summary-date-text");
       const dayEntries = document.getElementById("summary-day-entries");
-      const dayProtein = document.getElementById("summary-day-protein");
-      const dayCarbs = document.getElementById("summary-day-carbs");
-      const dayFat = document.getElementById("summary-day-fat");
-      const proteinBar = document.getElementById("summary-protein-bar");
-      const carbsBar = document.getElementById("summary-carbs-bar");
-      const fatBar = document.getElementById("summary-fat-bar");
+      const daySugar = document.getElementById("summary-day-sugar");
+      const dayFiber = document.getElementById("summary-day-fiber");
+      const sugarBar = document.getElementById("summary-sugar-bar");
+      const fiberBar = document.getElementById("summary-fiber-bar");
       const macroTotal = document.getElementById("macro-balance-total");
       const macroProtein = document.getElementById("macro-balance-protein");
       const macroCarbs = document.getElementById("macro-balance-carbs");
@@ -717,6 +717,14 @@
       const macroCarbsBar = document.getElementById("macro-balance-carbs-bar");
       const macroFatBar = document.getElementById("macro-balance-fat-bar");
       const macroCopy = document.getElementById("macro-balance-copy");
+      const macroTargetRow = document.getElementById("macro-balance-target-row");
+      const macroTargetPlanName = document.getElementById("macro-balance-target-plan-name");
+      const macroTargetProteinPct = document.getElementById("macro-balance-target-protein-pct");
+      const macroTargetCarbsPct = document.getElementById("macro-balance-target-carbs-pct");
+      const macroTargetFatPct = document.getElementById("macro-balance-target-fat-pct");
+      const macroTargetProteinBar = document.getElementById("macro-balance-target-protein-bar");
+      const macroTargetCarbsBar = document.getElementById("macro-balance-target-carbs-bar");
+      const macroTargetFatBar = document.getElementById("macro-balance-target-fat-bar");
       const foods = document.getElementById("summary-foods");
       const foodEntryCount = document.getElementById("food-entry-count");
       const calendar = document.getElementById("summary-calendar");
@@ -837,12 +845,10 @@
       if (dateText) dateText.textContent = displayDateValue(result.selectedDate);
       if (dayEntries) dayEntries.textContent = String(selectedDay.entriesCount || 0);
       if (foodEntryCount) foodEntryCount.textContent = String(selectedDay.entriesCount || 0);
-      if (dayProtein) dayProtein.textContent = `${Math.round(protein)}g`;
-      if (dayCarbs) dayCarbs.textContent = `${Math.round(carbs)}g`;
-      if (dayFat) dayFat.textContent = `${Math.round(fat)}g`;
-      if (proteinBar) proteinBar.style.width = `${pctOf(protein, 120)}%`;
-      if (carbsBar) carbsBar.style.width = `${pctOf(carbs, 250)}%`;
-      if (fatBar) fatBar.style.width = `${pctOf(fat, 70)}%`;
+      if (daySugar) daySugar.textContent = `${Math.round(sugar)}g`;
+      if (dayFiber) dayFiber.textContent = `${Math.round(fiber)}g`;
+      if (sugarBar) sugarBar.style.width = `${pctOf(sugar, 50)}%`;
+      if (fiberBar) fiberBar.style.width = `${pctOf(fiber, 30)}%`;
 
       const proteinCalories = protein * 4;
       const carbsCalories = carbs * 4;
@@ -858,16 +864,28 @@
       if (macroProtein) macroProtein.textContent = `${Math.round(protein)}g`;
       if (macroCarbs) macroCarbs.textContent = `${Math.round(carbs)}g`;
       if (macroFat) macroFat.textContent = `${Math.round(fat)}g`;
-      if (macroProteinPct) macroProteinPct.textContent = `${proteinPct}%`;
-      if (macroCarbsPct) macroCarbsPct.textContent = `${carbsPct}%`;
-      if (macroFatPct) macroFatPct.textContent = `${fatPct}%`;
+      if (macroProteinPct) macroProteinPct.textContent = `${proteinPct}% of today's calories`;
+      if (macroCarbsPct) macroCarbsPct.textContent = `${carbsPct}% of today's calories`;
+      if (macroFatPct) macroFatPct.textContent = `${fatPct}% of today's calories`;
       if (macroProteinBar) macroProteinBar.style.width = `${proteinPct}%`;
       if (macroCarbsBar) macroCarbsBar.style.width = `${carbsPct}%`;
       if (macroFatBar) macroFatBar.style.width = `${fatPct}%`;
       if (macroCopy) {
         macroCopy.textContent = macroCalories > 0
-          ? "Macro balance is based on protein and carbs at 4 kcal/g, and fat at 9 kcal/g."
+          ? "Percentages show the share of today's logged calories coming from each macro, not a share of a daily target."
           : "Add nutrition to see your macro balance.";
+      }
+
+      const dietTarget = result.dietTargetPct || null;
+      if (macroTargetRow) macroTargetRow.classList.toggle("is-hidden", !dietTarget);
+      if (dietTarget) {
+        if (macroTargetPlanName) macroTargetPlanName.textContent = dietTarget.label || "your plan";
+        if (macroTargetProteinPct) macroTargetProteinPct.textContent = `${dietTarget.protein}% recommended per day`;
+        if (macroTargetCarbsPct) macroTargetCarbsPct.textContent = `${dietTarget.carbs}% recommended per day`;
+        if (macroTargetFatPct) macroTargetFatPct.textContent = `${dietTarget.fat}% recommended per day`;
+        if (macroTargetProteinBar) macroTargetProteinBar.style.width = `${dietTarget.protein}%`;
+        if (macroTargetCarbsBar) macroTargetCarbsBar.style.width = `${dietTarget.carbs}%`;
+        if (macroTargetFatBar) macroTargetFatBar.style.width = `${dietTarget.fat}%`;
       }
 
       if (foods) {
@@ -1126,10 +1144,15 @@
         return;
       }
 
+      const detailsInput = document.getElementById("meal-photo-details");
+
       const data = new FormData();
       data.append("file", fileInput.files[0]);
       data.append("date", dateInput.value);
       data.append("time", currentTimeValue());
+      if (detailsInput && detailsInput.value.trim()) {
+        data.append("details", detailsInput.value.trim());
+      }
 
       try {
         ensureOnline("You are offline. Reconnect before uploading a meal photo.");
