@@ -38,5 +38,6 @@ return [
     'subscriptions' => [
         'provider' => 'apple',
         'environment' => $_ENV['APPLE_IAP_ENV'] ?? getenv('APPLE_IAP_ENV') ?: 'sandbox',
+        'bundle_id' => env_value('APPLE_BUNDLE_ID', 'com.taverai.app'),
     ],
 ];

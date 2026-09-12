@@ -23,6 +23,9 @@
 # misc
 .DS_Store
 *.pem
+# Apple's public root CA cert (not a secret) - required at runtime to verify
+# App Store Server Notifications, so it's tracked despite the *.pem rule above.
+!app/core/certs/AppleRootCA-G3.pem
 
 # debug
 npm-debug.log*
