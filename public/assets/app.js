@@ -168,6 +168,47 @@
     }
   }
 
+  function initViewportFix() {
+    // iOS WKWebView (Capacitor) sometimes fails to re-run layout/media-query
+    // evaluation right after a rotation, leaving the page stuck on the
+    // landscape (or portrait) layout it had before the device turned. Forcing
+    // a reflow shortly after any orientation/viewport change works around it.
+    const root = document.documentElement;
+
+    const setViewportHeightVar = () => {
+      root.style.setProperty("--vh", `${window.innerHeight * 0.01}px`);
+    };
+
+    const forceReflow = () => {
+      const previousDisplay = root.style.display;
+      root.style.display = "none";
+      void root.offsetHeight;
+      root.style.display = previousDisplay;
+    };
+
+    setViewportHeightVar();
+
+    let settleTimer = null;
+    const handleViewportChange = () => {
+      setViewportHeightVar();
+      clearTimeout(settleTimer);
+      // WKWebView can take a beat to finish resizing its frame after
+      // "orientationchange" fires, so re-check and force a reflow once
+      // rotation has actually settled instead of only reacting immediately.
+      settleTimer = setTimeout(() => {
+        setViewportHeightVar();
+        forceReflow();
+      }, 200);
+    };
+
+    window.addEventListener("orientationchange", handleViewportChange);
+    window.addEventListener("resize", handleViewportChange);
+    window.visualViewport?.addEventListener("resize", handleViewportChange);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") handleViewportChange();
+    });
+  }
+
   function initPwa() {
     const offlineBanner = document.getElementById("offline-banner");
     const installBanner = document.getElementById("install-banner");
@@ -1646,6 +1687,7 @@
     logoutButton?.addEventListener("click", async () => {
       try {
         await api("/api/logout", { method: "POST", body: JSON.stringify({}) });
+        clearLocalDataCache(userCacheScope(currentUser));
         clearLastUser();
         window.location.href = pageUrl("login");
       } catch (error) {
@@ -2814,6 +2856,7 @@
   }
 
   markNetworkOnlyControls();
+  initViewportFix();
   initPwa();
   initAppNavigationPolish();
   activateNav();

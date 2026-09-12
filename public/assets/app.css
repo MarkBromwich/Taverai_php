@@ -50,6 +50,7 @@ body {
     margin: 0;
     min-height: 100vh;
     min-height: 100dvh;
+    min-height: calc(var(--vh, 1vh) * 100);
     font-family: "Instrument Sans", system-ui, sans-serif;
     background:
         linear-gradient(180deg, var(--bg-top) 0, #08111d 140px, var(--bg) 520px),
@@ -178,6 +179,7 @@ h3 {
 .app-shell {
     min-height: 100vh;
     min-height: 100dvh;
+    min-height: calc(var(--vh, 1vh) * 100);
     display: grid;
     grid-template-rows: auto 1fr auto;
 }

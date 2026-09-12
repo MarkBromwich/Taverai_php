@@ -40,18 +40,26 @@ class AccountController extends Controller
         }
         if (array_key_exists('username', $body)) {
             $email = strtolower(trim((string) $body['username']));
-            if ($email !== '' && !str_contains($email, '@')) {
+            if ($email !== '' && !is_valid_email($email)) {
                 $this->json(['error' => 'username must be a valid email'], 400);
                 return;
             }
-            if (strlen($email) > 191) {
-                $this->json(['error' => 'Email is too long.'], 400);
-                return;
+            if ($email !== '') {
+                $existing = $this->model('UserModel')->findByEmail($email);
+                if ($existing !== null && (string) $existing['id'] !== $userId) {
+                    $this->json(['error' => 'An account with that email already exists.'], 409);
+                    return;
+                }
             }
             $userData['username'] = $email ?: null;
         }
         if (array_key_exists('avatarUrl', $body)) {
-            $userData['avatarUrl'] = trim((string) $body['avatarUrl']) ?: null;
+            $avatarUrl = trim((string) $body['avatarUrl']);
+            if (strlen($avatarUrl) > 2048) {
+                $this->json(['error' => 'avatarUrl is too long.'], 400);
+                return;
+            }
+            $userData['avatarUrl'] = $avatarUrl ?: null;
         }
         if (array_key_exists('dailyCalorieGoal', $body)) {
             $goal = $body['dailyCalorieGoal'];
@@ -236,11 +244,16 @@ class AccountController extends Controller
             return;
         }
 
+        $previousUser = $this->model('UserModel')->findWithPreferences($userId);
         $avatarUrl = $stored['url'];
         $saved = $this->model('UserModel')->updateAvatarUrl($userId, $avatarUrl);
         if ($saved === null) {
             $this->json(['error' => 'Failed to update avatar.'], 500);
             return;
+        }
+
+        if (!empty($previousUser['avatar_url']) && $previousUser['avatar_url'] !== $saved) {
+            delete_public_upload($previousUser['avatar_url']);
         }
 
         $this->json(['avatarUrl' => $saved]);
@@ -249,9 +262,22 @@ class AccountController extends Controller
     public function destroyAccount(): void
     {
         $userId = $this->requireUserId();
+
+        $user = $this->model('UserModel')->findWithPreferences($userId);
+        $entries = $this->model('EntryModel')->allForUser($userId, 3650);
+
         if (!$this->model('UserModel')->deleteUser($userId)) {
             $this->json(['error' => 'Failed to delete account.'], 500);
             return;
+        }
+
+        if (!empty($user['avatar_url'])) {
+            delete_public_upload($user['avatar_url']);
+        }
+        foreach ($entries as $entry) {
+            if (!empty($entry['imageUrl'])) {
+                delete_public_upload($entry['imageUrl']);
+            }
         }
 
         $_SESSION = [];

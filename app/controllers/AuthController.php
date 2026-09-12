@@ -20,7 +20,7 @@ class AuthController extends Controller
         $email = strtolower(trim((string) ($body['username'] ?? '')));
         $password = (string) ($body['password'] ?? '');
 
-        if ($email === '' || !str_contains($email, '@')) {
+        if (!is_valid_email($email)) {
             $this->json(['error' => 'Please enter a valid email address.'], 400);
             return;
         }
@@ -29,7 +29,7 @@ class AuthController extends Controller
             $this->json(['error' => 'Password must be at least 8 characters.'], 400);
             return;
         }
-        if (strlen($email) > 191 || strlen($firstName) > 100 || strlen($lastName) > 100) {
+        if (strlen($firstName) > 100 || strlen($lastName) > 100) {
             $this->json(['error' => 'Account details are too long.'], 400);
             return;
         }

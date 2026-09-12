@@ -10,64 +10,44 @@ class RateLimitModel extends BaseModel
         }
 
         $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
-        $resetAt = $now->modify('+' . $windowMs . ' milliseconds');
-
-        $db->beginTransaction();
+        $nowFormatted = $now->format('Y-m-d H:i:s');
+        $resetAtFormatted = $now->modify('+' . $windowMs . ' milliseconds')->format('Y-m-d H:i:s');
 
         try {
-            $stmt = $db->prepare('SELECT id, `count`, reset_at FROM rate_limit_buckets WHERE `key` = :key LIMIT 1');
+            // Atomic upsert: MySQL takes a row lock for INSERT ... ON DUPLICATE KEY UPDATE,
+            // so concurrent first requests for the same key can't both "see no row" and
+            // race each other into a duplicate-key exception (which used to fail the
+            // limiter open, i.e. let both requests through with no cap at all).
+            $upsert = $db->prepare(
+                'INSERT INTO rate_limit_buckets (id, `key`, `count`, reset_at)
+                 VALUES (:id, :key, 1, :new_reset_at)
+                 ON DUPLICATE KEY UPDATE
+                     `count` = IF(reset_at <= :now1, 1, `count` + 1),
+                     reset_at = IF(reset_at <= :now2, :new_reset_at2, reset_at)'
+            );
+            $upsert->execute([
+                'id' => generate_id(),
+                'key' => $key,
+                'new_reset_at' => $resetAtFormatted,
+                'now1' => $nowFormatted,
+                'now2' => $nowFormatted,
+                'new_reset_at2' => $resetAtFormatted,
+            ]);
+
+            $stmt = $db->prepare('SELECT `count`, reset_at FROM rate_limit_buckets WHERE `key` = :key LIMIT 1');
             $stmt->execute(['key' => $key]);
-            $existing = $stmt->fetch();
+            $row = $stmt->fetch();
 
-            if (!$existing || strtotime((string) $existing['reset_at']) <= $now->getTimestamp()) {
-                if ($existing) {
-                    $update = $db->prepare('UPDATE rate_limit_buckets SET `count` = 1, reset_at = :reset_at WHERE id = :id');
-                    $update->execute([
-                        'reset_at' => $resetAt->format('Y-m-d H:i:s'),
-                        'id' => $existing['id'],
-                    ]);
-                } else {
-                    $insert = $db->prepare('INSERT INTO rate_limit_buckets (id, `key`, `count`, reset_at) VALUES (:id, :key, 1, :reset_at)');
-                    $insert->execute([
-                        'id' => generate_id(),
-                        'key' => $key,
-                        'reset_at' => $resetAt->format('Y-m-d H:i:s'),
-                    ]);
-                }
+            $count = $row ? (int) $row['count'] : 1;
+            $existingReset = new DateTimeImmutable((string) ($row['reset_at'] ?? $resetAtFormatted), new DateTimeZone('UTC'));
+            $retryAfterMs = max(0, ($existingReset->getTimestamp() - $now->getTimestamp()) * 1000);
 
-                $db->commit();
-                return [
-                    'ok' => true,
-                    'remaining' => max(0, $limit - 1),
-                    'retryAfterMs' => max(0, ($resetAt->getTimestamp() - $now->getTimestamp()) * 1000),
-                ];
+            if ($count > $limit) {
+                return ['ok' => false, 'remaining' => 0, 'retryAfterMs' => $retryAfterMs];
             }
 
-            $count = (int) $existing['count'];
-            $existingReset = new DateTimeImmutable((string) $existing['reset_at'], new DateTimeZone('UTC'));
-
-            if ($count >= $limit) {
-                $db->commit();
-                return [
-                    'ok' => false,
-                    'remaining' => 0,
-                    'retryAfterMs' => max(0, ($existingReset->getTimestamp() - $now->getTimestamp()) * 1000),
-                ];
-            }
-
-            $update = $db->prepare('UPDATE rate_limit_buckets SET `count` = `count` + 1 WHERE id = :id');
-            $update->execute(['id' => $existing['id']]);
-            $db->commit();
-
-            return [
-                'ok' => true,
-                'remaining' => max(0, $limit - ($count + 1)),
-                'retryAfterMs' => max(0, ($existingReset->getTimestamp() - $now->getTimestamp()) * 1000),
-            ];
+            return ['ok' => true, 'remaining' => max(0, $limit - $count), 'retryAfterMs' => $retryAfterMs];
         } catch (Throwable $e) {
-            if ($db->inTransaction()) {
-                $db->rollBack();
-            }
             return ['ok' => true, 'remaining' => $limit, 'retryAfterMs' => 0];
         }
     }

@@ -319,7 +319,7 @@ class AdminController extends Controller
         $delete->execute(['id' => $entryId]);
 
         if ($imageUrl !== null) {
-            $this->deletePublicUpload($imageUrl);
+            delete_public_upload($imageUrl);
         }
 
         app_log('Admin deleted meal entry', ['adminId' => current_user_id(), 'entryId' => $entryId, 'userId' => $entry['user_id'] ?? null]);
@@ -457,28 +457,4 @@ class AdminController extends Controller
         return is_array($decoded) ? $decoded : null;
     }
 
-    private function deletePublicUpload(string $url): void
-    {
-        $path = parse_url($url, PHP_URL_PATH);
-        if (!is_string($path) || $path === '') {
-            return;
-        }
-
-        $publicBase = trim((string) config('uploads.public_base', '/uploads'), '/');
-        $needle = '/' . $publicBase . '/';
-        $pos = strpos($path, $needle);
-        if ($pos === false) {
-            return;
-        }
-
-        $filename = basename(substr($path, $pos + strlen($needle)));
-        if ($filename === '' || !preg_match('/^[A-Za-z0-9_.-]+$/', $filename)) {
-            return;
-        }
-
-        $file = rtrim((string) config('uploads.dir'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $filename;
-        if (is_file($file)) {
-            @unlink($file);
-        }
-    }
 }

@@ -29,7 +29,7 @@ return [
         'password' => env_value('SMTP_PASSWORD', ''),
         'from_email' => env_value('SMTP_FROM_EMAIL', 'no-reply@taverai.com'),
         'from_name' => env_value('SMTP_FROM_NAME', 'Taverai'),
-        'verify_peer' => env_bool('SMTP_VERIFY_PEER', false),
+        'verify_peer' => env_bool('SMTP_VERIFY_PEER', true),
     ],
     'uploads' => [
         'dir' => env_value('UPLOADS_DIR', PUBLICROOT . '/uploads'),

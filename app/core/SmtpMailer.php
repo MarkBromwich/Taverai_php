@@ -31,6 +31,12 @@ class SmtpMailer
             throw new RuntimeException('SMTP mail is not fully configured.');
         }
 
+        if (preg_match('/[\r\n]/', $toEmail) || filter_var($toEmail, FILTER_VALIDATE_EMAIL) === false) {
+            throw new InvalidArgumentException('Refusing to send to an invalid email address.');
+        }
+
+        $subject = str_replace(["\r", "\n"], '', $subject);
+
         $this->connect();
 
         try {

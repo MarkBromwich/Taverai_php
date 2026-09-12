@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 error_reporting(E_ALL);
 
-$isLocal = isset($_SERVER['HTTP_HOST']) && str_contains((string) $_SERVER['HTTP_HOST'], 'localhost');
-ini_set('display_errors', $isLocal ? '1' : '0');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('X-Frame-Options: SAMEORIGIN');
@@ -43,25 +41,8 @@ define('TAVERAI_PUBLICROOT', __DIR__);
 require_once TAVERAI_ROOT . '/app/helpers/functions.php';
 load_env_files(TAVERAI_ROOT);
 
-$appConfig = require TAVERAI_ROOT . '/config/app.php';
-$dbConfigPath = TAVERAI_ROOT . '/config/database.php';
-$dbConfig = file_exists($dbConfigPath)
-    ? require $dbConfigPath
-    : require TAVERAI_ROOT . '/config/database.php.example';
-
-$GLOBALS['app_config'] = $appConfig;
-$GLOBALS['db_config'] = $dbConfig;
-
-session_name(config('session.cookie_name', 'taveri_session'));
-session_set_cookie_params([
-    'lifetime' => (int) config('session.lifetime', 60 * 60 * 24 * 30),
-    'path' => '/',
-    'httponly' => true,
-    'samesite' => 'Lax',
-    'secure' => !$isLocal,
-]);
-session_start();
-csrf_token();
+$isLocal = strtolower((string) env_value('APP_ENV', 'production')) === 'local';
+ini_set('display_errors', $isLocal ? '1' : '0');
 
 spl_autoload_register(function ($class) {
     $baseDir = TAVERAI_ROOT . '/app/';
@@ -80,6 +61,26 @@ spl_autoload_register(function ($class) {
 });
 
 try {
+    $appConfig = require TAVERAI_ROOT . '/config/app.php';
+    $dbConfigPath = TAVERAI_ROOT . '/config/database.php';
+    $dbConfig = file_exists($dbConfigPath)
+        ? require $dbConfigPath
+        : require TAVERAI_ROOT . '/config/database.php.example';
+
+    $GLOBALS['app_config'] = $appConfig;
+    $GLOBALS['db_config'] = $dbConfig;
+
+    session_name(config('session.cookie_name', 'taveri_session'));
+    session_set_cookie_params([
+        'lifetime' => (int) config('session.lifetime', 60 * 60 * 24 * 30),
+        'path' => '/',
+        'httponly' => true,
+        'samesite' => 'Lax',
+        'secure' => !$isLocal,
+    ]);
+    session_start();
+    csrf_token();
+
     $method = request_method();
     $routePath = current_route_path($_SERVER['REQUEST_URI'] ?? '/');
     $csrfExempt = in_array($routePath, ['/api/subscription/apple/notifications'], true);

@@ -123,6 +123,43 @@ function e(?string $value): string
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+function delete_public_upload(?string $url): void
+{
+    if (!is_string($url) || $url === '') {
+        return;
+    }
+
+    $path = parse_url($url, PHP_URL_PATH);
+    if (!is_string($path) || $path === '') {
+        return;
+    }
+
+    $publicBase = trim((string) config('uploads.public_base', '/uploads'), '/');
+    $needle = '/' . $publicBase . '/';
+    $pos = strpos($path, $needle);
+    if ($pos === false) {
+        return;
+    }
+
+    $filename = basename(substr($path, $pos + strlen($needle)));
+    if ($filename === '' || !preg_match('/^[A-Za-z0-9_.-]+$/', $filename)) {
+        return;
+    }
+
+    $file = rtrim((string) config('uploads.dir'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $filename;
+    if (is_file($file)) {
+        @unlink($file);
+    }
+}
+
+function is_valid_email(string $email): bool
+{
+    return $email !== ''
+        && strlen($email) <= 191
+        && !preg_match('/[\r\n]/', $email)
+        && filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+}
+
 function request_method(): string
 {
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');

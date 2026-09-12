@@ -20,12 +20,29 @@ class HealthController extends Controller
 
         $ok = !in_array(false, array_column($checks, 'ok'), true);
 
-        $this->json([
+        $payload = [
             'ok' => $ok,
             'service' => config('site_name', 'Taverai'),
             'time' => gmdate('c'),
-            'checks' => $checks,
-        ], $ok ? 200 : 503);
+        ];
+
+        if ($this->detailedHealthAllowed()) {
+            $payload['checks'] = $checks;
+        }
+
+        $this->json($payload, $ok ? 200 : 503);
+    }
+
+    private function detailedHealthAllowed(): bool
+    {
+        if (strtolower((string) env_value('APP_ENV', 'production')) === 'local') {
+            return true;
+        }
+
+        $configured = trim((string) env_value('HEALTH_CHECK_TOKEN', ''));
+        $provided = (string) ($_SERVER['HTTP_X_HEALTH_TOKEN'] ?? '');
+
+        return $configured !== '' && hash_equals($configured, $provided);
     }
 
     private function databaseCheck(): array

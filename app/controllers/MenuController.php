@@ -330,7 +330,8 @@ class MenuController extends Controller
         }
 
         $url = 'https://world.openfoodfacts.org/api/v2/product/' . rawurlencode($barcode) . '.json';
-        $json = @file_get_contents($url);
+        $context = stream_context_create(['http' => ['timeout' => 8, 'method' => 'GET']]);
+        $json = @file_get_contents($url, false, $context);
         if (!is_string($json) || $json === '') {
             $this->json(['error' => 'Product not found for that barcode.'], 404);
             return;

@@ -15,6 +15,18 @@ class AppViewController: CAPBridgeViewController {
         applyDarkWebViewBackground()
     }
 
+    // WKWebView sometimes finishes its own rotation animation without ever
+    // re-evaluating CSS orientation media queries against the new size,
+    // leaving the page stuck showing the old (e.g. landscape) layout after
+    // rotating back to portrait. Nudging it with a resize event once the
+    // native rotation transition completes forces it to re-check.
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            self?.webView?.evaluateJavaScript("window.dispatchEvent(new Event('resize'));", completionHandler: nil)
+        }
+    }
+
     private func applyDarkWebViewBackground() {
         view.backgroundColor = appBackground
         webView?.isOpaque = false

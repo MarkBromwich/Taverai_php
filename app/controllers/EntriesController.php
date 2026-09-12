@@ -217,9 +217,16 @@ class EntriesController extends Controller
             return;
         }
 
-        if (!$this->model('EntryModel')->deleteForUser($userId, $id)) {
+        $entryModel = $this->model('EntryModel');
+        $existing = $entryModel->findForUser($userId, $id);
+
+        if (!$entryModel->deleteForUser($userId, $id)) {
             $this->json(['error' => 'Entry not found'], 404);
             return;
+        }
+
+        if ($existing !== null && !empty($existing['imageUrl'])) {
+            delete_public_upload($existing['imageUrl']);
         }
 
         $this->json(['ok' => true]);

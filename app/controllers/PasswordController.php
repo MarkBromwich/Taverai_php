@@ -15,7 +15,7 @@ class PasswordController extends Controller
 
         $body = $this->body();
         $email = strtolower(trim((string) ($body['email'] ?? '')));
-        if ($email === '' || !str_contains($email, '@')) {
+        if (!is_valid_email($email)) {
             $this->json(['error' => 'Valid email required.'], 400);
             return;
         }
@@ -113,7 +113,6 @@ class PasswordController extends Controller
 
     private function isLocal(): bool
     {
-        $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
-        return str_contains($host, 'localhost') || str_contains($host, '127.0.0.1');
+        return strtolower((string) env_value('APP_ENV', 'production')) === 'local';
     }
 }
