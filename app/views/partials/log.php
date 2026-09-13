@@ -77,11 +77,10 @@
             </article>
         </div>
 
-        <div class="stats-row" id="entry-stats">
-            <article class="stat-card"><span>Entries</span><strong id="summary-day-entries">0</strong></article>
-            <strong class="is-hidden" id="stat-protein">0g</strong>
-            <strong class="is-hidden" id="stat-carbs">0g</strong>
-            <strong class="is-hidden" id="stat-fat">0g</strong>
+        <div class="is-hidden" aria-hidden="true">
+            <strong id="stat-protein">0g</strong>
+            <strong id="stat-carbs">0g</strong>
+            <strong id="stat-fat">0g</strong>
         </div>
 
         <div class="dashboard-card">

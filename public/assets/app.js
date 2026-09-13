@@ -752,7 +752,6 @@
       const complianceReasons = document.getElementById("summary-compliance-reasons");
       const dayLabel = document.getElementById("summary-day-label");
       const dateText = document.getElementById("summary-date-text");
-      const dayEntries = document.getElementById("summary-day-entries");
       const macroTotal = document.getElementById("macro-balance-total");
       const macroNutrients = document.getElementById("macro-balance-nutrients");
       const macroCopy = document.getElementById("macro-balance-copy");
@@ -874,7 +873,6 @@
 
       if (dayLabel) dayLabel.textContent = friendlyDateLabel(result.selectedDate);
       if (dateText) dateText.textContent = displayDateValue(result.selectedDate);
-      if (dayEntries) dayEntries.textContent = String(selectedDay.entriesCount || 0);
       if (foodEntryCount) foodEntryCount.textContent = String(selectedDay.entriesCount || 0);
       const proteinCalories = protein * 4;
       const carbsCalories = carbs * 4;

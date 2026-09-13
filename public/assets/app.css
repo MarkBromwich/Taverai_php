@@ -1079,12 +1079,6 @@ body.is-offline [data-online-only] {
     background: rgba(255, 255, 255, 0.05);
 }
 
-.stats-row {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
-}
-
 .food-today-panel {
     display: grid;
     gap: 10px;
@@ -1778,7 +1772,6 @@ body.is-offline [data-online-only] {
     }
 
     .field-row.four-up,
-    .stats-row,
     .breakdown-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -2698,7 +2691,6 @@ body.is-offline [data-online-only] {
     .field-row,
     .field-row.three-up,
     .field-row.four-up,
-    .stats-row,
     .compare-upload-grid,
     .admin-metric-grid,
     .status-panel dl {
