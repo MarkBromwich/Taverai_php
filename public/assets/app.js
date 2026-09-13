@@ -413,13 +413,22 @@
     return Math.max(0, Math.min(100, Math.round((numericValue / numericTarget) * 100)));
   }
 
+  function rawPctOf(value, target) {
+    const numericValue = Number(value);
+    const numericTarget = Number(target);
+    if (!Number.isFinite(numericValue) || !Number.isFinite(numericTarget) || numericTarget <= 0) {
+      return 0;
+    }
+    return Math.max(0, Math.round((numericValue / numericTarget) * 100));
+  }
+
   function pctOfShare(actualSharePct, targetSharePct) {
     const actual = Number(actualSharePct);
     const target = Number(targetSharePct);
     if (!Number.isFinite(actual) || !Number.isFinite(target) || target <= 0) {
       return null;
     }
-    return Math.max(0, Math.min(100, Math.round((actual / target) * 100)));
+    return Math.max(0, Math.round((actual / target) * 100));
   }
 
   function macroVsTarget(actualGrams, actualSharePct, targetSharePct) {
@@ -881,7 +890,7 @@
       }
       if (macroCopy) {
         macroCopy.textContent = dietTarget
-          ? `Bars show how close today is to your ${dietTarget.label} targets, capped at 100%.`
+          ? `Bars show how close today is to your ${dietTarget.label} targets. Bars cap at 100%, but the percentage keeps counting if you go over.`
           : "Add a diet plan in Plans to compare today against a target. Sugar and fiber always show progress toward a general daily reference.";
       }
 
@@ -889,8 +898,8 @@
         const proteinVsTarget = macroVsTarget(protein, proteinPct, dietTarget?.protein);
         const carbsVsTarget = macroVsTarget(carbs, carbsPct, dietTarget?.carbs);
         const fatVsTarget = macroVsTarget(fat, fatPct, dietTarget?.fat);
-        const sugarPct = pctOf(sugar, 50);
-        const fiberPct = pctOf(fiber, 30);
+        const sugarPct = rawPctOf(sugar, 50);
+        const fiberPct = rawPctOf(fiber, 30);
 
         const rows = [
           macroNutrientRow("protein", "Protein", proteinVsTarget),
