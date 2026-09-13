@@ -730,16 +730,49 @@ body.is-offline [data-online-only] {
     background: var(--macro-color, var(--accent));
 }
 
-.mini-progress {
+.macro-balance-nutrients {
+    display: grid;
+    gap: 16px;
+}
+
+.macro-balance-nutrient {
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.macro-balance-nutrient-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.macro-balance-nutrient-header strong {
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.macro-balance-nutrient-value {
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.macro-balance-track {
+    height: 8px;
     overflow: hidden;
-    width: 100%;
-    height: 6px;
-    margin-top: 12px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.11);
 }
 
-.mini-progress > div {
+.macro-balance-track + .macro-balance-track {
+    margin-top: 4px;
+}
+
+.macro-balance-fill {
     width: 0;
     height: 100%;
     border-radius: inherit;
@@ -747,86 +780,9 @@ body.is-offline [data-online-only] {
     transition: width 0.2s ease;
 }
 
-.macro-balance-row {
-    margin-top: 18px;
-}
-
-.macro-balance-row:first-of-type {
-    margin-top: 0;
-}
-
-.macro-balance-row + .macro-balance-row {
-    padding-top: 18px;
-    border-top: 1px solid var(--border);
-}
-
-.macro-balance-row-label {
-    display: block;
-    color: var(--muted);
-    font-size: 0.78rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.macro-balance-bars {
-    display: flex;
-    overflow: hidden;
+.macro-balance-fill-goal {
     width: 100%;
-    height: 14px;
-    margin: 10px 0;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.11);
-}
-
-#macro-balance-target-bars {
-    height: 10px;
-    opacity: 0.85;
-}
-
-.macro-segment {
-    width: 0;
-    min-width: 0;
-    height: 100%;
-    transition: width 0.2s ease;
-}
-
-.macro-segment.macro-protein {
-    background: var(--macro-protein);
-}
-
-.macro-segment.macro-carbs {
-    background: var(--macro-carbs);
-}
-
-.macro-segment.macro-fat {
-    background: var(--macro-fat);
-}
-
-.macro-balance-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-}
-
-.macro-balance-item {
-    display: grid;
-    gap: 4px;
-    padding: 12px;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.03);
-}
-
-.macro-balance-item span,
-.macro-balance-item em {
-    color: var(--muted);
-    font-size: 0.74rem;
-    font-style: normal;
-}
-
-.macro-balance-item strong {
-    color: var(--text);
+    opacity: 0.32;
 }
 
 .macro-calories {
@@ -855,18 +811,6 @@ body.is-offline [data-online-only] {
 
 .macro-score {
     --macro-color: var(--accent);
-}
-
-.macro-balance-item.macro-protein {
-    --macro-color: var(--macro-protein);
-}
-
-.macro-balance-item.macro-carbs {
-    --macro-color: var(--macro-carbs);
-}
-
-.macro-balance-item.macro-fat {
-    --macro-color: var(--macro-fat);
 }
 
 .dashboard-grid {
@@ -3141,8 +3085,7 @@ body.is-offline [data-online-only] {
         border-radius: 16px;
     }
 
-    .log-overview-stats,
-    .macro-balance-grid {
+    .log-overview-stats {
         grid-template-columns: 1fr;
     }
 

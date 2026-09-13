@@ -413,6 +413,48 @@
     return Math.max(0, Math.min(100, Math.round((numericValue / numericTarget) * 100)));
   }
 
+  function pctOfShare(actualSharePct, targetSharePct) {
+    const actual = Number(actualSharePct);
+    const target = Number(targetSharePct);
+    if (!Number.isFinite(actual) || !Number.isFinite(target) || target <= 0) {
+      return null;
+    }
+    return Math.max(0, Math.min(100, Math.round((actual / target) * 100)));
+  }
+
+  function macroVsTarget(actualGrams, actualSharePct, targetSharePct) {
+    const ratio = pctOfShare(actualSharePct, targetSharePct);
+    if (ratio == null) {
+      return {
+        pct: actualSharePct,
+        note: `${Math.round(actualGrams)}g · ${actualSharePct}% of today's calories`,
+        hasGoal: false,
+      };
+    }
+    return {
+      pct: ratio,
+      note: `${Math.round(actualGrams)}g · ${ratio}% of target`,
+      hasGoal: true,
+    };
+  }
+
+  function macroNutrientRow(key, label, data) {
+    const barPct = Math.max(0, Math.min(100, Math.round(Number(data.pct) || 0)));
+    const goalTrack = data.hasGoal
+      ? '<div class="macro-balance-track macro-balance-track-goal"><div class="macro-balance-fill macro-balance-fill-goal"></div></div>'
+      : "";
+    return `
+      <div class="macro-balance-nutrient macro-${key}">
+        <div class="macro-balance-nutrient-header">
+          <strong>${escapeHtml(label)}</strong>
+          <span class="macro-balance-nutrient-value">${escapeHtml(data.note)}</span>
+        </div>
+        ${goalTrack}
+        <div class="macro-balance-track"><div class="macro-balance-fill" style="width:${barPct}%"></div></div>
+      </div>
+    `;
+  }
+
   function setProgress(el, pct) {
     if (!el) return;
     const value = Math.max(0, Math.min(100, Number(pct) || 0));
@@ -702,29 +744,9 @@
       const dayLabel = document.getElementById("summary-day-label");
       const dateText = document.getElementById("summary-date-text");
       const dayEntries = document.getElementById("summary-day-entries");
-      const daySugar = document.getElementById("summary-day-sugar");
-      const dayFiber = document.getElementById("summary-day-fiber");
-      const sugarBar = document.getElementById("summary-sugar-bar");
-      const fiberBar = document.getElementById("summary-fiber-bar");
       const macroTotal = document.getElementById("macro-balance-total");
-      const macroProtein = document.getElementById("macro-balance-protein");
-      const macroCarbs = document.getElementById("macro-balance-carbs");
-      const macroFat = document.getElementById("macro-balance-fat");
-      const macroProteinPct = document.getElementById("macro-balance-protein-pct");
-      const macroCarbsPct = document.getElementById("macro-balance-carbs-pct");
-      const macroFatPct = document.getElementById("macro-balance-fat-pct");
-      const macroProteinBar = document.getElementById("macro-balance-protein-bar");
-      const macroCarbsBar = document.getElementById("macro-balance-carbs-bar");
-      const macroFatBar = document.getElementById("macro-balance-fat-bar");
+      const macroNutrients = document.getElementById("macro-balance-nutrients");
       const macroCopy = document.getElementById("macro-balance-copy");
-      const macroTargetRow = document.getElementById("macro-balance-target-row");
-      const macroTargetPlanName = document.getElementById("macro-balance-target-plan-name");
-      const macroTargetProteinPct = document.getElementById("macro-balance-target-protein-pct");
-      const macroTargetCarbsPct = document.getElementById("macro-balance-target-carbs-pct");
-      const macroTargetFatPct = document.getElementById("macro-balance-target-fat-pct");
-      const macroTargetProteinBar = document.getElementById("macro-balance-target-protein-bar");
-      const macroTargetCarbsBar = document.getElementById("macro-balance-target-carbs-bar");
-      const macroTargetFatBar = document.getElementById("macro-balance-target-fat-bar");
       const foods = document.getElementById("summary-foods");
       const foodEntryCount = document.getElementById("food-entry-count");
       const calendar = document.getElementById("summary-calendar");
@@ -845,11 +867,6 @@
       if (dateText) dateText.textContent = displayDateValue(result.selectedDate);
       if (dayEntries) dayEntries.textContent = String(selectedDay.entriesCount || 0);
       if (foodEntryCount) foodEntryCount.textContent = String(selectedDay.entriesCount || 0);
-      if (daySugar) daySugar.textContent = `${Math.round(sugar)}g`;
-      if (dayFiber) dayFiber.textContent = `${Math.round(fiber)}g`;
-      if (sugarBar) sugarBar.style.width = `${pctOf(sugar, 50)}%`;
-      if (fiberBar) fiberBar.style.width = `${pctOf(fiber, 30)}%`;
-
       const proteinCalories = protein * 4;
       const carbsCalories = carbs * 4;
       const fatCalories = fat * 9;
@@ -857,35 +874,32 @@
       const proteinPct = macroShare(protein, 4, macroCalories);
       const carbsPct = macroShare(carbs, 4, macroCalories);
       const fatPct = macroCalories > 0 ? Math.max(0, 100 - proteinPct - carbsPct) : 0;
+      const dietTarget = result.dietTargetPct || null;
 
       if (macroTotal) {
         macroTotal.textContent = macroCalories > 0 ? `${Math.round(macroCalories)} macro kcal` : "No macros yet";
       }
-      if (macroProtein) macroProtein.textContent = `${Math.round(protein)}g`;
-      if (macroCarbs) macroCarbs.textContent = `${Math.round(carbs)}g`;
-      if (macroFat) macroFat.textContent = `${Math.round(fat)}g`;
-      if (macroProteinPct) macroProteinPct.textContent = `${proteinPct}% of today's calories`;
-      if (macroCarbsPct) macroCarbsPct.textContent = `${carbsPct}% of today's calories`;
-      if (macroFatPct) macroFatPct.textContent = `${fatPct}% of today's calories`;
-      if (macroProteinBar) macroProteinBar.style.width = `${proteinPct}%`;
-      if (macroCarbsBar) macroCarbsBar.style.width = `${carbsPct}%`;
-      if (macroFatBar) macroFatBar.style.width = `${fatPct}%`;
       if (macroCopy) {
-        macroCopy.textContent = macroCalories > 0
-          ? "Percentages show the share of today's logged calories coming from each macro, not a share of a daily target."
-          : "Add nutrition to see your macro balance.";
+        macroCopy.textContent = dietTarget
+          ? `Bars show how close today is to your ${dietTarget.label} targets, capped at 100%.`
+          : "Add a diet plan in Plans to compare today against a target. Sugar and fiber always show progress toward a general daily reference.";
       }
 
-      const dietTarget = result.dietTargetPct || null;
-      if (macroTargetRow) macroTargetRow.classList.toggle("is-hidden", !dietTarget);
-      if (dietTarget) {
-        if (macroTargetPlanName) macroTargetPlanName.textContent = dietTarget.label || "your plan";
-        if (macroTargetProteinPct) macroTargetProteinPct.textContent = `${dietTarget.protein}% recommended per day`;
-        if (macroTargetCarbsPct) macroTargetCarbsPct.textContent = `${dietTarget.carbs}% recommended per day`;
-        if (macroTargetFatPct) macroTargetFatPct.textContent = `${dietTarget.fat}% recommended per day`;
-        if (macroTargetProteinBar) macroTargetProteinBar.style.width = `${dietTarget.protein}%`;
-        if (macroTargetCarbsBar) macroTargetCarbsBar.style.width = `${dietTarget.carbs}%`;
-        if (macroTargetFatBar) macroTargetFatBar.style.width = `${dietTarget.fat}%`;
+      if (macroNutrients) {
+        const proteinVsTarget = macroVsTarget(protein, proteinPct, dietTarget?.protein);
+        const carbsVsTarget = macroVsTarget(carbs, carbsPct, dietTarget?.carbs);
+        const fatVsTarget = macroVsTarget(fat, fatPct, dietTarget?.fat);
+        const sugarPct = pctOf(sugar, 50);
+        const fiberPct = pctOf(fiber, 30);
+
+        const rows = [
+          macroNutrientRow("protein", "Protein", proteinVsTarget),
+          macroNutrientRow("carbs", "Carbs", carbsVsTarget),
+          macroNutrientRow("fat", "Fat", fatVsTarget),
+          macroNutrientRow("sugar", "Sugar", { pct: sugarPct, note: `${Math.round(sugar)}g of 50g limit · ${sugarPct}%`, hasGoal: true }),
+          macroNutrientRow("fiber", "Fiber", { pct: fiberPct, note: `${Math.round(fiber)}g of 30g goal · ${fiberPct}%`, hasGoal: true }),
+        ];
+        macroNutrients.innerHTML = rows.join("");
       }
 
       if (foods) {
