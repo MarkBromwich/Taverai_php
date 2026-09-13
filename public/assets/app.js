@@ -2026,7 +2026,7 @@
       : "";
 
     el.innerHTML = `
-      <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(kind)} trend">
+      <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(kind)} trend">
         ${gridLines}
         ${goalLine}
         <line class="trend-axis" x1="${padLeft}" y1="${height - padBottom}" x2="${width - padRight}" y2="${height - padBottom}"></line>
