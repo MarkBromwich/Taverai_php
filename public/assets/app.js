@@ -1885,23 +1885,27 @@
     renderTrendChart("coach-score-chart", series.map((day) => day.score), "score", scoreTones);
     renderTrendLabels("coach-calorie-labels", series);
     renderTrendLabels("coach-score-labels", series);
-    renderMacroTrends(result.breakdown || []);
+    renderOverallMacros(result);
     renderCoachBreakdown(result.breakdown || [], result.targets || {});
   }
 
-  function renderMacroTrends(breakdown) {
-    const chronological = Array.isArray(breakdown) ? breakdown.slice().reverse() : [];
-    const metrics = [
-      { id: "coach-trend-calories", key: "calories" },
-      { id: "coach-trend-protein", key: "proteinG" },
-      { id: "coach-trend-carbs", key: "carbsG" },
-      { id: "coach-trend-fat", key: "fatG" },
-      { id: "coach-trend-sugar", key: "sugarG" },
-    ];
-    metrics.forEach(({ id, key }) => {
-      const values = chronological.map((day) => (Number(day.entries || 0) > 0 ? day[key] : null));
-      renderTrendChart(id, values, key);
-    });
+  function renderOverallMacros(result) {
+    const container = document.getElementById("coach-overall-macros");
+    if (!container) return;
+    const averages = result.averages || {};
+    const targets = result.targets || {};
+    const pseudoDay = {
+      proteinG: averages.proteinG,
+      carbsG: averages.carbsG,
+      fatG: averages.fatG,
+      sugarG: averages.sugarG,
+    };
+    container.innerHTML = [
+      breakdownMetricTile(pseudoDay, targets, "proteinG", "Protein", "protein", "g"),
+      breakdownMetricTile(pseudoDay, targets, "carbsG", "Carbs", "carbs", "g"),
+      breakdownMetricTile(pseudoDay, targets, "fatG", "Fat", "fat", "g"),
+      breakdownMetricTile(pseudoDay, targets, "sugarG", "Sugar", "sugar", "g"),
+    ].join("");
   }
 
   function renderAiSourceBadge(el, source) {
@@ -2000,6 +2004,16 @@
     return calorieProgressTone(pctOf(value, target), true);
   }
 
+  // Fruit/vegetable/grain servings are a minimum to reach, not a ceiling to
+  // stay under, so the tone logic is the inverse of breakdownLimitTone.
+  function breakdownGoalTone(value, target) {
+    if (!target || !Number.isFinite(Number(value))) return "empty";
+    const pct = pctOf(value, target);
+    if (pct >= 100) return "great";
+    if (pct >= 50) return "fair";
+    return "off";
+  }
+
   function formatBreakdownValue(value, unit = "") {
     if (value == null || value === "" || !Number.isFinite(Number(value))) return "—";
     return `${Math.round(Number(value))}${unit}`;
@@ -2024,34 +2038,62 @@
     return `<span class="legend ${cssClass} is-${tone}"><span class="metric-main">${escapeHtml(label)}: <strong>${escapeHtml(formatBreakdownValue(actual, unit))}</strong></span><em>${escapeHtml(targetText)}</em></span>`;
   }
 
+  function headerTargetText(target, unit = "") {
+    if (!target) return "—";
+    if (target.planMax) return formatBreakdownTarget(target.planMax, unit);
+    if (target.targetPct) return formatBreakdownTarget(target.targetPct, "%");
+    return "—";
+  }
+
+  function coachTableCell(value, target, unit = "", mode = "limit") {
+    const limit = target?.planMax || target?.userSet || null;
+    const tone = mode === "goal" ? breakdownGoalTone(value, limit) : breakdownLimitTone(value, limit);
+    return `<td class="is-${tone}">${escapeHtml(formatBreakdownValue(value, unit))}</td>`;
+  }
+
   function renderCoachBreakdown(days, targets = {}) {
     const list = document.getElementById("coach-breakdown-list");
     if (!list) return;
-
-    const today = new Date().toISOString().slice(0, 10);
-    const completeDays = Array.isArray(days) ? days.filter((day) => day.date !== today) : [];
-
-    if (!completeDays.length) {
-      list.innerHTML = '<p class="empty-state">No completed days in this window yet. Today’s numbers live on the Log page.</p>';
+    if (!Array.isArray(days) || !days.length) {
+      list.innerHTML = '<p class="empty-state">No logged meals in this window yet.</p>';
       return;
     }
 
-    const day = completeDays[0];
+    const rows = days.map((day) => `
+      <tr>
+        <th scope="row">${escapeHtml(friendlyDateLabel(day.date))}</th>
+        ${coachTableCell(day.calories, targets.calories, "")}
+        ${coachTableCell(day.proteinG, targets.proteinG, "")}
+        ${coachTableCell(day.carbsG, targets.carbsG, "")}
+        ${coachTableCell(day.fatG, targets.fatG, "")}
+        ${coachTableCell(day.fruit, targets.fruit, "", "goal")}
+        ${coachTableCell(day.vegetables, targets.vegetables, "", "goal")}
+        ${coachTableCell(day.grains, targets.grains, "", "goal")}
+        ${coachTableCell(day.sugarG, targets.sugarG, "")}
+        <td class="is-empty">${escapeHtml(day.entries ?? 0)}</td>
+      </tr>
+    `).join("");
+
     list.innerHTML = `
-      <article class="breakdown-day">
-        <strong>${escapeHtml(friendlyDateLabel(day.date))}</strong>
-        <div class="breakdown-grid">
-          ${breakdownMetricTile(day, targets, "calories", "Calories", "calorie", " kcal")}
-          ${breakdownMetricTile(day, targets, "proteinG", "Protein", "protein", "g")}
-          ${breakdownMetricTile(day, targets, "carbsG", "Carbs", "carbs", "g")}
-          ${breakdownMetricTile(day, targets, "fatG", "Fat", "fat", "g")}
-          <span class="legend fruit is-${breakdownLimitTone(day.fruit, targets.fruit?.planMax)}"><span class="metric-main">Fruit: <strong>${escapeHtml(day.fruit ?? 0)}</strong></span><em>Plan max ${escapeHtml(formatBreakdownTarget(targets.fruit?.planMax, " serv"))}</em></span>
-          <span class="legend grain is-${breakdownLimitTone(day.grains, targets.grains?.planMax)}"><span class="metric-main">Grains: <strong>${escapeHtml(day.grains ?? 0)}</strong></span><em>Plan max ${escapeHtml(formatBreakdownTarget(targets.grains?.planMax, " serv"))}</em></span>
-          <span class="legend veg is-${breakdownLimitTone(day.vegetables, targets.vegetables?.planMax)}"><span class="metric-main">Vegetables: <strong>${escapeHtml(day.vegetables ?? 0)}</strong></span><em>Plan max ${escapeHtml(formatBreakdownTarget(targets.vegetables?.planMax, " serv"))}</em></span>
-          <span class="legend sugar is-${breakdownLimitTone(day.sugarG, targets.sugarG?.planMax)}"><span class="metric-main">Sugar: <strong>${escapeHtml(formatBreakdownValue(day.sugarG, "g"))}</strong></span><em>Plan max ${escapeHtml(formatBreakdownTarget(targets.sugarG?.planMax, "g"))}</em></span>
-        </div>
-        <p class="inline-note compact-note">${day.entries ? `${escapeHtml(day.entries)} logged meal${Number(day.entries) === 1 ? "" : "s"}` : "No logged meals"}</p>
-      </article>
+      <div class="coach-daily-table-wrap">
+        <table class="coach-daily-table">
+          <thead>
+            <tr>
+              <th scope="col">Day</th>
+              <th scope="col">Calories<br><em>${escapeHtml(headerTargetText(targets.calories))}</em></th>
+              <th scope="col">Protein<br><em>${escapeHtml(headerTargetText(targets.proteinG, "g"))}</em></th>
+              <th scope="col">Carbs<br><em>${escapeHtml(headerTargetText(targets.carbsG, "g"))}</em></th>
+              <th scope="col">Fat<br><em>${escapeHtml(headerTargetText(targets.fatG, "g"))}</em></th>
+              <th scope="col">Fruit<br><em>${escapeHtml(headerTargetText(targets.fruit))} serv</em></th>
+              <th scope="col">Veg<br><em>${escapeHtml(headerTargetText(targets.vegetables))} serv</em></th>
+              <th scope="col">Grains<br><em>${escapeHtml(headerTargetText(targets.grains))} serv</em></th>
+              <th scope="col">Sugar<br><em>${escapeHtml(headerTargetText(targets.sugarG, "g"))}</em></th>
+              <th scope="col">Meals</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
     `;
   }
 

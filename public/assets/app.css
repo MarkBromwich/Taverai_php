@@ -2274,55 +2274,52 @@ body.is-offline [data-online-only] {
     font-size: 0.78rem;
 }
 
-.mini-trend-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 16px;
+.coach-daily-table-wrap {
+    overflow-x: auto;
 }
 
-.mini-trend {
-    display: grid;
-    gap: 6px;
+.coach-daily-table {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: collapse;
+    font-size: 0.82rem;
 }
 
-.mini-trend > span {
+.coach-daily-table th,
+.coach-daily-table td {
+    padding: 8px 10px;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+}
+
+.coach-daily-table thead th {
     color: var(--muted);
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.02em;
 }
 
-.mini-trend-chart {
-    min-height: 60px;
-}
-
-.mini-trend-chart svg {
+.coach-daily-table thead th em {
     display: block;
-    width: 100%;
-    height: 60px;
-    overflow: visible;
+    color: var(--faint);
+    font-size: 0.72rem;
+    font-style: normal;
+    text-transform: none;
+    font-weight: 400;
+    margin-top: 2px;
 }
 
-.mini-trend-calorie .trend-point,
-.mini-trend-calorie .trend-segment { stroke: var(--macro-calories); }
-.mini-trend-calorie .trend-point { fill: var(--macro-calories); }
+.coach-daily-table tbody th {
+    color: var(--text);
+    font-weight: 700;
+}
 
-.mini-trend-protein .trend-point,
-.mini-trend-protein .trend-segment { stroke: var(--macro-protein); }
-.mini-trend-protein .trend-point { fill: var(--macro-protein); }
-
-.mini-trend-carbs .trend-point,
-.mini-trend-carbs .trend-segment { stroke: var(--macro-carbs); }
-.mini-trend-carbs .trend-point { fill: var(--macro-carbs); }
-
-.mini-trend-fat .trend-point,
-.mini-trend-fat .trend-segment { stroke: var(--macro-fat); }
-.mini-trend-fat .trend-point { fill: var(--macro-fat); }
-
-.mini-trend-sugar .trend-point,
-.mini-trend-sugar .trend-segment { stroke: var(--danger); }
-.mini-trend-sugar .trend-point { fill: var(--danger); }
+.coach-daily-table td.is-great { color: var(--gauge-green); }
+.coach-daily-table td.is-fair { color: var(--gauge-yellow); }
+.coach-daily-table td.is-off { color: var(--gauge-red); }
+.coach-daily-table td.is-empty { color: var(--muted); }
 
 .legend-row {
     display: flex;

@@ -32,6 +32,8 @@
                 <div class="trend-labels" id="coach-score-labels"></div>
             </div>
         </div>
+
+        <div class="breakdown-grid" id="coach-overall-macros"></div>
         <p class="inline-note is-hidden" id="coach-empty-tip">Tip: Click into <a href="<?= e(route_url('log')) ?>">Log</a> to add entries. The Coach page updates automatically as your history grows.</p>
 
         <article class="dashboard-card">
@@ -81,29 +83,6 @@
                 <li>Loading macro nutrient context.</li>
             </ul>
         </article>
-
-        <div class="mini-trend-grid" id="coach-macro-trends">
-            <div class="mini-trend mini-trend-calorie">
-                <span>Calories</span>
-                <div class="trend-chart mini-trend-chart" id="coach-trend-calories"></div>
-            </div>
-            <div class="mini-trend mini-trend-protein">
-                <span>Protein</span>
-                <div class="trend-chart mini-trend-chart" id="coach-trend-protein"></div>
-            </div>
-            <div class="mini-trend mini-trend-carbs">
-                <span>Carbs</span>
-                <div class="trend-chart mini-trend-chart" id="coach-trend-carbs"></div>
-            </div>
-            <div class="mini-trend mini-trend-fat">
-                <span>Fat</span>
-                <div class="trend-chart mini-trend-chart" id="coach-trend-fat"></div>
-            </div>
-            <div class="mini-trend mini-trend-sugar">
-                <span>Sugar</span>
-                <div class="trend-chart mini-trend-chart" id="coach-trend-sugar"></div>
-            </div>
-        </div>
 
         <div class="stack" id="coach-breakdown-list">
             <p class="empty-state">Loading food group breakdown.</p>

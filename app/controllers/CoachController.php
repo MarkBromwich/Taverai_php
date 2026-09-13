@@ -24,11 +24,22 @@ class CoachController extends Controller
         $targets = $this->macroBreakdownTargets($activePlan, $goal);
         $series = $this->dailySeries($entries, $days);
         $breakdown = $this->foodGroupBreakdown($entries, $breakdownDays);
+        $loggedSeriesDays = array_values(array_filter($series, static fn(array $day): bool => (int) ($day['entries'] ?? 0) > 0));
         $scores = array_values(array_filter(array_map(static fn(array $day) => $day['score'], $series), static fn($v) => $v !== null));
         $calorieDays = array_values(array_filter(array_map(static fn(array $day) => $day['calories'], $series), static fn($v) => $v > 0));
 
         $avgScore = $scores ? (int) round(array_sum($scores) / count($scores)) : null;
         $avgCalories = $calorieDays ? (int) round(array_sum($calorieDays) / count($calorieDays)) : null;
+        $avgOf = static function (array $days, string $key): ?int {
+            if ($days === []) {
+                return null;
+            }
+            return (int) round(array_sum(array_map(static fn(array $day) => (float) ($day[$key] ?? 0), $days)) / count($days));
+        };
+        $avgProtein = $avgOf($loggedSeriesDays, 'proteinG');
+        $avgCarbs = $avgOf($loggedSeriesDays, 'carbsG');
+        $avgFat = $avgOf($loggedSeriesDays, 'fatG');
+        $avgSugar = $avgOf($loggedSeriesDays, 'sugarG');
         $trendInsightSource = 'fallback';
         $macroInsightSource = 'fallback';
         $insights = $this->trendInsights($series, $breakdown, $avgScore, $avgCalories, $goal, $range, $trendInsightSource);
@@ -42,6 +53,10 @@ class CoachController extends Controller
             'averages' => [
                 'score' => $avgScore,
                 'calories' => $avgCalories,
+                'proteinG' => $avgProtein,
+                'carbsG' => $avgCarbs,
+                'fatG' => $avgFat,
+                'sugarG' => $avgSugar,
             ],
             'targets' => $targets,
             'insights' => $insights,
@@ -99,6 +114,7 @@ class CoachController extends Controller
                 'proteinG' => 0,
                 'carbsG' => 0,
                 'fatG' => 0,
+                'sugarG' => 0,
                 'score' => null,
                 '_scoreTotal' => 0,
                 '_scoreCount' => 0,
@@ -116,6 +132,7 @@ class CoachController extends Controller
             $series[$date]['proteinG'] += (float) ($entry['proteinG'] ?? 0);
             $series[$date]['carbsG'] += (float) ($entry['carbsG'] ?? 0);
             $series[$date]['fatG'] += (float) ($entry['fatG'] ?? 0);
+            $series[$date]['sugarG'] += $this->parsedNumber($entry, 'sugarG');
 
             $score = $this->entryPrimaryScore($entry);
             if ($score !== null) {
@@ -129,6 +146,7 @@ class CoachController extends Controller
             $day['proteinG'] = round($day['proteinG'], 1);
             $day['carbsG'] = round($day['carbsG'], 1);
             $day['fatG'] = round($day['fatG'], 1);
+            $day['sugarG'] = round($day['sugarG'], 1);
             $day['score'] = $day['_scoreCount'] > 0 ? (int) round($day['_scoreTotal'] / $day['_scoreCount']) : null;
             unset($day['_scoreTotal'], $day['_scoreCount']);
         }
