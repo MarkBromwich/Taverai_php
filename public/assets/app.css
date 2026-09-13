@@ -2267,6 +2267,41 @@ body.is-offline [data-online-only] {
     fill: var(--gauge-red);
 }
 
+.trend-chart svg text {
+    font-family: inherit;
+    font-size: 10px;
+}
+
+.trend-chart .trend-grid-line {
+    stroke: rgba(178, 194, 214, 0.12);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+}
+
+.trend-chart .trend-axis-label {
+    fill: var(--faint);
+}
+
+.trend-chart .trend-goal-line {
+    stroke: var(--muted);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+}
+
+.trend-chart .trend-goal-label {
+    fill: var(--muted);
+    font-weight: 700;
+}
+
+.trend-chart .trend-value-label {
+    font-weight: 700;
+    fill: var(--text);
+}
+
+.trend-chart .trend-value-label.is-great { fill: var(--gauge-green); }
+.trend-chart .trend-value-label.is-fair { fill: var(--gauge-yellow); }
+.trend-chart .trend-value-label.is-off { fill: var(--gauge-red); }
+
 .trend-labels {
     display: grid;
     gap: 8px;

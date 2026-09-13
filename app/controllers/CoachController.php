@@ -24,22 +24,14 @@ class CoachController extends Controller
         $targets = $this->macroBreakdownTargets($activePlan, $goal);
         $series = $this->dailySeries($entries, $days);
         $breakdown = $this->foodGroupBreakdown($entries, $breakdownDays);
-        $loggedSeriesDays = array_values(array_filter($series, static fn(array $day): bool => (int) ($day['entries'] ?? 0) > 0));
+        $overallBreakdown = $breakdownDays === $days ? $breakdown : $this->foodGroupBreakdown($entries, $days);
+        $overallLoggedDays = array_values(array_filter($overallBreakdown, static fn(array $day): bool => (int) ($day['entries'] ?? 0) > 0));
+        $overallAverages = $overallLoggedDays !== [] ? $this->macroAverages($overallLoggedDays) : null;
         $scores = array_values(array_filter(array_map(static fn(array $day) => $day['score'], $series), static fn($v) => $v !== null));
         $calorieDays = array_values(array_filter(array_map(static fn(array $day) => $day['calories'], $series), static fn($v) => $v > 0));
 
         $avgScore = $scores ? (int) round(array_sum($scores) / count($scores)) : null;
         $avgCalories = $calorieDays ? (int) round(array_sum($calorieDays) / count($calorieDays)) : null;
-        $avgOf = static function (array $days, string $key): ?int {
-            if ($days === []) {
-                return null;
-            }
-            return (int) round(array_sum(array_map(static fn(array $day) => (float) ($day[$key] ?? 0), $days)) / count($days));
-        };
-        $avgProtein = $avgOf($loggedSeriesDays, 'proteinG');
-        $avgCarbs = $avgOf($loggedSeriesDays, 'carbsG');
-        $avgFat = $avgOf($loggedSeriesDays, 'fatG');
-        $avgSugar = $avgOf($loggedSeriesDays, 'sugarG');
         $trendInsightSource = 'fallback';
         $macroInsightSource = 'fallback';
         $insights = $this->trendInsights($series, $breakdown, $avgScore, $avgCalories, $goal, $range, $trendInsightSource);
@@ -53,10 +45,13 @@ class CoachController extends Controller
             'averages' => [
                 'score' => $avgScore,
                 'calories' => $avgCalories,
-                'proteinG' => $avgProtein,
-                'carbsG' => $avgCarbs,
-                'fatG' => $avgFat,
-                'sugarG' => $avgSugar,
+                'proteinG' => $overallAverages['proteinG'] ?? null,
+                'carbsG' => $overallAverages['carbsG'] ?? null,
+                'fatG' => $overallAverages['fatG'] ?? null,
+                'sugarG' => $overallAverages['sugarG'] ?? null,
+                'fruit' => $overallAverages['fruit'] ?? null,
+                'vegetables' => $overallAverages['vegetables'] ?? null,
+                'grains' => $overallAverages['grains'] ?? null,
             ],
             'targets' => $targets,
             'insights' => $insights,

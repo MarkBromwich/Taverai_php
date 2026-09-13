@@ -33,6 +33,10 @@
             </div>
         </div>
 
+        <div class="feed-card-header compact-note">
+            <strong>Overall macros</strong>
+            <span class="inline-note" id="coach-overall-macros-note">Weekly average · logged days only</span>
+        </div>
         <div class="breakdown-grid" id="coach-overall-macros"></div>
         <p class="inline-note is-hidden" id="coach-empty-tip">Tip: Click into <a href="<?= e(route_url('log')) ?>">Log</a> to add entries. The Coach page updates automatically as your history grows.</p>
 

@@ -1881,7 +1881,7 @@
     const loggedCalories = series.map((day) => (Number(day.entries || 0) > 0 ? day.calories : null));
     const calorieTones = series.map((day) => result.goal ? calorieProgressTone(pctOf(day.calories || 0, result.goal), true) : "empty");
     const scoreTones = series.map((day) => scoreTone(day.score));
-    renderTrendChart("coach-calorie-chart", loggedCalories, "calories", calorieTones);
+    renderTrendChart("coach-calorie-chart", loggedCalories, "calories", calorieTones, { goal: result.goal });
     renderTrendChart("coach-score-chart", series.map((day) => day.score), "score", scoreTones);
     renderTrendLabels("coach-calorie-labels", series);
     renderTrendLabels("coach-score-labels", series);
@@ -1891,6 +1891,11 @@
 
   function renderOverallMacros(result) {
     const container = document.getElementById("coach-overall-macros");
+    const note = document.getElementById("coach-overall-macros-note");
+    if (note) {
+      const rangeLabel = { weekly: "Weekly", monthly: "Monthly", yearly: "Yearly" }[result.range] || "Weekly";
+      note.textContent = `${rangeLabel} average · logged days only`;
+    }
     if (!container) return;
     const averages = result.averages || {};
     const targets = result.targets || {};
@@ -1899,12 +1904,18 @@
       carbsG: averages.carbsG,
       fatG: averages.fatG,
       sugarG: averages.sugarG,
+      fruit: averages.fruit,
+      vegetables: averages.vegetables,
+      grains: averages.grains,
     };
     container.innerHTML = [
       breakdownMetricTile(pseudoDay, targets, "proteinG", "Protein", "protein", "g"),
       breakdownMetricTile(pseudoDay, targets, "carbsG", "Carbs", "carbs", "g"),
       breakdownMetricTile(pseudoDay, targets, "fatG", "Fat", "fat", "g"),
       breakdownMetricTile(pseudoDay, targets, "sugarG", "Sugar", "sugar", "g"),
+      breakdownMetricTile(pseudoDay, targets, "fruit", "Fruit", "fruit", "", "goal"),
+      breakdownMetricTile(pseudoDay, targets, "vegetables", "Vegetables", "veg", "", "goal"),
+      breakdownMetricTile(pseudoDay, targets, "grains", "Grains", "grain", "", "goal"),
     ].join("");
   }
 
@@ -1922,7 +1933,7 @@
     el.classList.add(`is-${value}`);
   }
 
-  function renderTrendChart(id, values, kind, tones = []) {
+  function renderTrendChart(id, values, kind, tones = [], options = {}) {
     const el = document.getElementById(id);
     if (!el) return;
     // A day with no logged entries is passed in as null/undefined and must
@@ -1941,15 +1952,21 @@
 
     const width = 320;
     const height = 160;
-    const pad = 14;
-    const max = kind === "score" ? 100 : Math.max(...numeric, 1);
+    const padTop = 18;
+    const padRight = 14;
+    const padBottom = 16;
+    const padLeft = 32;
+    const goal = Number.isFinite(Number(options.goal)) && Number(options.goal) > 0 ? Number(options.goal) : null;
+    const max = kind === "score" ? 100 : Math.max(...numeric, goal || 0, 1);
     const min = 0;
-    const step = clean.length > 1 ? (width - pad * 2) / (clean.length - 1) : 0;
+    const plotWidth = width - padLeft - padRight;
+    const plotHeight = height - padTop - padBottom;
+    const yFor = (value) => padTop + plotHeight - ((value - min) / Math.max(1, max - min)) * plotHeight;
+    const step = clean.length > 1 ? plotWidth / (clean.length - 1) : 0;
     const points = clean.map((value, index) => {
       if (value == null) return null;
-      const x = pad + (index * step);
-      const y = height - pad - ((value - min) / Math.max(1, max - min)) * (height - pad * 2);
-      return { x, y, value, tone: tones[index] || "empty" };
+      const x = padLeft + (index * step);
+      return { x, y: yFor(value), value, tone: tones[index] || "empty" };
     });
 
     // Build one filled polygon per contiguous run of real points, so a gap
@@ -1970,7 +1987,7 @@
       .filter((run) => run.length > 1)
       .map((run) => {
         const coords = run.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
-        return `<polygon class="trend-area" points="${run[0].x.toFixed(1)},${height - pad} ${coords} ${run[run.length - 1].x.toFixed(1)},${height - pad}"></polygon>`;
+        return `<polygon class="trend-area" points="${run[0].x.toFixed(1)},${height - padBottom} ${coords} ${run[run.length - 1].x.toFixed(1)},${height - padBottom}"></polygon>`;
       })
       .join("");
 
@@ -1981,12 +1998,37 @@
     }).join("");
     const circles = points.filter(Boolean).map((point) => `<circle class="trend-point is-${escapeHtml(point.tone)}" cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="4"><title>${escapeHtml(String(point.value))}</title></circle>`).join("");
 
+    // Y-axis: three reference gridlines (0 / half / max) with their values
+    // labeled directly on the chart, since touch devices can't hover for a
+    // tooltip the way a mouse can.
+    const gridLines = [0, max / 2, max].map((value) => {
+      const y = yFor(value);
+      return `<line class="trend-grid-line" x1="${padLeft}" y1="${y.toFixed(1)}" x2="${width - padRight}" y2="${y.toFixed(1)}"></line>
+        <text class="trend-axis-label" x="${(padLeft - 6).toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="end">${Math.round(value)}</text>`;
+    }).join("");
+
+    const goalLine = goal != null && goal <= max * 1.02
+      ? `<line class="trend-goal-line" x1="${padLeft}" y1="${yFor(goal).toFixed(1)}" x2="${width - padRight}" y2="${yFor(goal).toFixed(1)}"></line>
+        <text class="trend-axis-label trend-goal-label" x="${(width - padRight).toFixed(1)}" y="${(yFor(goal) - 4).toFixed(1)}" text-anchor="end">Goal ${Math.round(goal)}</text>`
+      : "";
+
+    // Label the most recent logged value directly, since it's the number
+    // people usually want at a glance and a mouseover tooltip is invisible
+    // on a phone.
+    const lastPoint = [...points].reverse().find(Boolean);
+    const lastLabel = lastPoint
+      ? `<text class="trend-value-label is-${escapeHtml(lastPoint.tone)}" x="${lastPoint.x.toFixed(1)}" y="${(Math.max(padTop - 4, lastPoint.y - 10)).toFixed(1)}" text-anchor="middle">${escapeHtml(String(Math.round(lastPoint.value)))}</text>`
+      : "";
+
     el.innerHTML = `
       <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(kind)} trend">
-        <line class="trend-axis" x1="${pad}" y1="${height - pad}" x2="${width - pad}" y2="${height - pad}"></line>
+        ${gridLines}
+        ${goalLine}
+        <line class="trend-axis" x1="${padLeft}" y1="${height - padBottom}" x2="${width - padRight}" y2="${height - padBottom}"></line>
         ${areaPolygons}
         ${segments}
         ${circles}
+        ${lastLabel}
       </svg>
     `;
   }
@@ -2024,15 +2066,16 @@
     return `${Math.round(Number(target))}${unit}`;
   }
 
-  function breakdownMetricTile(day, targets, key, label, cssClass, unit = "") {
+  function breakdownMetricTile(day, targets, key, label, cssClass, unit = "", mode = "limit") {
     const target = targets?.[key] || {};
     const actual = day?.[key];
     const limit = target.planMax || target.userSet || null;
-    const tone = breakdownLimitTone(actual, limit);
+    const tone = mode === "goal" ? breakdownGoalTone(actual, limit) : breakdownLimitTone(actual, limit);
+    const ceilingLabel = mode === "goal" ? "Daily goal" : "Plan max";
     const userSet = target.userSet ? `Goal ${formatBreakdownTarget(target.userSet, unit)}` : "";
     const planMax = target.planMax
-      ? `Plan max ${formatBreakdownTarget(target.planMax, unit)}`
-      : (target.targetPct ? `Plan max ${formatBreakdownTarget(target.targetPct, "%")}` : "");
+      ? `${ceilingLabel} ${formatBreakdownTarget(target.planMax, unit)}`
+      : (target.targetPct ? `${ceilingLabel} ${formatBreakdownTarget(target.targetPct, "%")}` : "");
     const targetText = [userSet, planMax].filter((item, index, items) => item && items.indexOf(item) === index).join(" / ") || "Target —";
 
     return `<span class="legend ${cssClass} is-${tone}"><span class="metric-main">${escapeHtml(label)}: <strong>${escapeHtml(formatBreakdownValue(actual, unit))}</strong></span><em>${escapeHtml(targetText)}</em></span>`;
