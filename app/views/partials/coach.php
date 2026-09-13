@@ -12,6 +12,8 @@
             </div>
         </div>
 
+        <span class="tag" id="coach-streak-tag">Loading streak…</span>
+
         <div class="trend-grid">
             <div>
                 <div class="feed-card-header">
@@ -64,7 +66,6 @@
             <span class="legend fruit">Fruit</span>
             <span class="legend veg">Vegetables</span>
             <span class="legend grain">Grains</span>
-            <span class="legend salt">Salt</span>
             <span class="legend sugar">Sugar</span>
             <span class="legend calorie">Calories</span>
             <span class="legend carbs">Carbs</span>
@@ -80,6 +81,30 @@
                 <li>Loading macro nutrient context.</li>
             </ul>
         </article>
+
+        <div class="mini-trend-grid" id="coach-macro-trends">
+            <div class="mini-trend mini-trend-calorie">
+                <span>Calories</span>
+                <div class="trend-chart mini-trend-chart" id="coach-trend-calories"></div>
+            </div>
+            <div class="mini-trend mini-trend-protein">
+                <span>Protein</span>
+                <div class="trend-chart mini-trend-chart" id="coach-trend-protein"></div>
+            </div>
+            <div class="mini-trend mini-trend-carbs">
+                <span>Carbs</span>
+                <div class="trend-chart mini-trend-chart" id="coach-trend-carbs"></div>
+            </div>
+            <div class="mini-trend mini-trend-fat">
+                <span>Fat</span>
+                <div class="trend-chart mini-trend-chart" id="coach-trend-fat"></div>
+            </div>
+            <div class="mini-trend mini-trend-sugar">
+                <span>Sugar</span>
+                <div class="trend-chart mini-trend-chart" id="coach-trend-sugar"></div>
+            </div>
+        </div>
+
         <div class="stack" id="coach-breakdown-list">
             <p class="empty-state">Loading food group breakdown.</p>
         </div>
@@ -99,8 +124,14 @@
                 <textarea id="coach-question" name="question" rows="5" placeholder="Example: Looking at the past two weeks, what should I improve first?"></textarea>
             </div>
             <div class="field">
-                <label for="coach-horizon">Look back window (days)</label>
-                <input id="coach-horizon" name="horizonDays" type="number" min="7" max="90" value="30">
+                <label for="coach-horizon">Look back window</label>
+                <div class="button-row compact-actions" id="coach-horizon-controls">
+                    <button class="button button-soft" type="button" data-coach-horizon="7">7 days</button>
+                    <button class="button button-soft" type="button" data-coach-horizon="14">14 days</button>
+                    <button class="button button-soft is-active" type="button" data-coach-horizon="30">30 days</button>
+                    <button class="button button-soft" type="button" data-coach-horizon="90">90 days</button>
+                </div>
+                <input id="coach-horizon" name="horizonDays" type="hidden" value="30">
             </div>
             <button class="button button-primary" type="submit">Ask coach</button>
             <p class="form-message" id="coach-message" aria-live="polite"></p>

@@ -249,7 +249,7 @@ class CoachController extends Controller
 
             $response = $client->chatJson(
                 (string) config('openai.coach_model', 'gpt-4.1-mini'),
-                'You write concise macro nutrient coaching for Taverai. Return only JSON with key "insights", an array of 2 to 3 short, specific bullets. Mention calories, carbs, protein, fat, sugar, or produce/grains when useful. Use supportive wording and do not diagnose medical issues.',
+                'You write concise macro nutrient coaching for Taverai. Return only JSON with key "insights", an array of 2 to 3 short, specific bullets. Mention calories, carbs, protein, fat, sugar, or produce/grains when useful. Every bullet must end with one concrete, doable next step (e.g. a specific food, swap, or serving size), not just an observation. Use supportive wording and do not diagnose medical issues.',
                 json_encode($payload, JSON_UNESCAPED_SLASHES)
             );
 
@@ -379,7 +379,7 @@ class CoachController extends Controller
 
             $response = $client->chatJson(
                 (string) config('openai.coach_model', 'gpt-4.1-mini'),
-                'You write concise nutrition trend insights for Taverai. Return only JSON with key "insights", an array of 2 to 4 short, specific bullets. Mention calories, plan alignment, macro pattern, or consistency when useful. Do not diagnose medical issues.',
+                'You write concise nutrition trend insights for Taverai. Return only JSON with key "insights", an array of 2 to 4 short, specific bullets. Mention calories, plan alignment, macro pattern, or consistency when useful. Every bullet must end with one concrete, doable next step, not just an observation. Do not diagnose medical issues.',
                 json_encode($payload, JSON_UNESCAPED_SLASHES)
             );
 

@@ -1751,8 +1751,24 @@
     const answer = document.getElementById("coach-answer");
     const rangeControls = document.getElementById("coach-range-controls");
     const breakdownDays = document.getElementById("coach-breakdown-days");
+    const horizonControls = document.getElementById("coach-horizon-controls");
+    const horizonInput = document.getElementById("coach-horizon");
+    const streakTag = document.getElementById("coach-streak-tag");
     let activeRange = "weekly";
     if (!form || !answer) return;
+
+    async function loadStreak() {
+      if (!streakTag) return;
+      try {
+        const result = await api("/api/entries/summary", { method: "GET" });
+        const days = Number(result.streakDays || 0);
+        streakTag.textContent = days > 0
+          ? `${days} day${days === 1 ? "" : "s"} streak`
+          : "No active streak yet";
+      } catch (error) {
+        streakTag.textContent = "Streak unavailable";
+      }
+    }
 
     async function loadCoachSummary() {
       const days = breakdownDays?.value || "3";
@@ -1817,7 +1833,16 @@
 
     breakdownDays?.addEventListener("change", loadCoachSummary);
 
-    await loadCoachSummary();
+    horizonControls?.querySelectorAll("[data-coach-horizon]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (horizonInput) horizonInput.value = button.getAttribute("data-coach-horizon") || "30";
+        horizonControls.querySelectorAll("[data-coach-horizon]").forEach((item) => {
+          item.classList.toggle("is-active", item === button);
+        });
+      });
+    });
+
+    await Promise.all([loadCoachSummary(), loadStreak()]);
   }
 
   function renderCoachSummary(result) {
@@ -1853,13 +1878,30 @@
     renderAiSourceBadge(macroSource, result.debug?.macroInsights);
     emptyTip?.classList.toggle("is-hidden", hasEntries);
 
+    const loggedCalories = series.map((day) => (Number(day.entries || 0) > 0 ? day.calories : null));
     const calorieTones = series.map((day) => result.goal ? calorieProgressTone(pctOf(day.calories || 0, result.goal), true) : "empty");
     const scoreTones = series.map((day) => scoreTone(day.score));
-    renderTrendChart("coach-calorie-chart", series.map((day) => day.calories || null), "calories", calorieTones);
+    renderTrendChart("coach-calorie-chart", loggedCalories, "calories", calorieTones);
     renderTrendChart("coach-score-chart", series.map((day) => day.score), "score", scoreTones);
     renderTrendLabels("coach-calorie-labels", series);
     renderTrendLabels("coach-score-labels", series);
+    renderMacroTrends(result.breakdown || []);
     renderCoachBreakdown(result.breakdown || [], result.targets || {});
+  }
+
+  function renderMacroTrends(breakdown) {
+    const chronological = Array.isArray(breakdown) ? breakdown.slice().reverse() : [];
+    const metrics = [
+      { id: "coach-trend-calories", key: "calories" },
+      { id: "coach-trend-protein", key: "proteinG" },
+      { id: "coach-trend-carbs", key: "carbsG" },
+      { id: "coach-trend-fat", key: "fatG" },
+      { id: "coach-trend-sugar", key: "sugarG" },
+    ];
+    metrics.forEach(({ id, key }) => {
+      const values = chronological.map((day) => (Number(day.entries || 0) > 0 ? day[key] : null));
+      renderTrendChart(id, values, key);
+    });
   }
 
   function renderAiSourceBadge(el, source) {
@@ -1879,7 +1921,14 @@
   function renderTrendChart(id, values, kind, tones = []) {
     const el = document.getElementById(id);
     if (!el) return;
-    const clean = values.map((value) => Number.isFinite(Number(value)) ? Number(value) : null);
+    // A day with no logged entries is passed in as null/undefined and must
+    // stay a gap in the chart, not collapse to 0 (Number(null) === 0, so a
+    // naive Number() coercion here would plot "didn't log" as "logged zero").
+    const clean = values.map((value) => {
+      if (value === null || value === undefined || value === "") return null;
+      const numeric = Number(value);
+      return Number.isFinite(numeric) ? numeric : null;
+    });
     const numeric = clean.filter((value) => value != null);
     if (!numeric.length) {
       el.innerHTML = '<p class="empty-state">No chart data yet.</p>';
@@ -1889,7 +1938,7 @@
     const width = 320;
     const height = 160;
     const pad = 14;
-    const max = kind === "score" ? 100 : Math.max(...numeric, 100);
+    const max = kind === "score" ? 100 : Math.max(...numeric, 1);
     const min = 0;
     const step = clean.length > 1 ? (width - pad * 2) / (clean.length - 1) : 0;
     const points = clean.map((value, index) => {
@@ -1898,8 +1947,29 @@
       const y = height - pad - ((value - min) / Math.max(1, max - min)) * (height - pad * 2);
       return { x, y, value, tone: tones[index] || "empty" };
     });
-    const line = points.filter(Boolean).map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
-    const area = line ? `${pad},${height - pad} ${line} ${width - pad},${height - pad}` : "";
+
+    // Build one filled polygon per contiguous run of real points, so a gap
+    // (unlogged day) doesn't get visually bridged by the fill either.
+    const runs = [];
+    let currentRun = [];
+    points.forEach((point) => {
+      if (point) {
+        currentRun.push(point);
+      } else if (currentRun.length) {
+        runs.push(currentRun);
+        currentRun = [];
+      }
+    });
+    if (currentRun.length) runs.push(currentRun);
+
+    const areaPolygons = runs
+      .filter((run) => run.length > 1)
+      .map((run) => {
+        const coords = run.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
+        return `<polygon class="trend-area" points="${run[0].x.toFixed(1)},${height - pad} ${coords} ${run[run.length - 1].x.toFixed(1)},${height - pad}"></polygon>`;
+      })
+      .join("");
+
     const segments = points.slice(1).map((point, index) => {
       const previous = points[index];
       if (!point || !previous) return "";
@@ -1910,8 +1980,8 @@
     el.innerHTML = `
       <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(kind)} trend">
         <line class="trend-axis" x1="${pad}" y1="${height - pad}" x2="${width - pad}" y2="${height - pad}"></line>
-        ${area ? `<polygon class="trend-area" points="${area}"></polygon>` : ""}
-        ${segments || (line ? `<polyline class="trend-segment is-empty" points="${line}"></polyline>` : "")}
+        ${areaPolygons}
+        ${segments}
         ${circles}
       </svg>
     `;
@@ -1957,12 +2027,17 @@
   function renderCoachBreakdown(days, targets = {}) {
     const list = document.getElementById("coach-breakdown-list");
     if (!list) return;
-    if (!Array.isArray(days) || !days.length) {
-      list.innerHTML = '<p class="empty-state">No logged meals in this window yet.</p>';
+
+    const today = new Date().toISOString().slice(0, 10);
+    const completeDays = Array.isArray(days) ? days.filter((day) => day.date !== today) : [];
+
+    if (!completeDays.length) {
+      list.innerHTML = '<p class="empty-state">No completed days in this window yet. Today’s numbers live on the Log page.</p>';
       return;
     }
 
-    list.innerHTML = days.map((day) => `
+    const day = completeDays[0];
+    list.innerHTML = `
       <article class="breakdown-day">
         <strong>${escapeHtml(friendlyDateLabel(day.date))}</strong>
         <div class="breakdown-grid">
@@ -1977,7 +2052,7 @@
         </div>
         <p class="inline-note compact-note">${day.entries ? `${escapeHtml(day.entries)} logged meal${Number(day.entries) === 1 ? "" : "s"}` : "No logged meals"}</p>
       </article>
-    `).join("");
+    `;
   }
 
   function mealPlanIngredientList(ingredients) {
