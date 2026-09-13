@@ -1231,8 +1231,10 @@
     const customPlanAiNote = document.getElementById("custom-plan-ai-note");
     const goalEnabled = document.getElementById("plans-goal-enabled");
     const goalRange = document.getElementById("plans-goal-range");
-    const goalValue = document.getElementById("plans-goal-value");
+    const goalNumber = document.getElementById("plans-goal-number");
     const goalSaveButton = document.getElementById("plans-save-goal");
+    const templatePreview = document.getElementById("template-preview");
+    let templateCache = [];
     const customFields = customPlanForm ? {
       preset: customPlanForm.elements.preset,
       name: customPlanForm.elements.name,
@@ -1249,18 +1251,19 @@
     if (!templateSelect || !plansList) return;
 
     function renderGoal(value) {
-      if (!goalRange || !goalValue || !goalEnabled) return;
+      if (!goalRange || !goalNumber || !goalEnabled) return;
       const hasGoal = value != null && value !== "";
       goalEnabled.checked = hasGoal;
       goalRange.disabled = !hasGoal;
+      goalNumber.disabled = !hasGoal;
       goalRange.value = hasGoal ? String(value) : "2000";
-      goalValue.textContent = hasGoal ? `${goalRange.value} kcal` : "—";
+      goalNumber.value = hasGoal ? String(value) : "2000";
     }
 
-    function syncGoalLabel() {
-      if (!goalRange || !goalValue || !goalEnabled) return;
-      goalValue.textContent = goalEnabled.checked ? `${goalRange.value} kcal` : "—";
+    function syncGoalEnabled() {
+      if (!goalRange || !goalNumber || !goalEnabled) return;
       goalRange.disabled = !goalEnabled.checked;
+      goalNumber.disabled = !goalEnabled.checked;
     }
 
     function applyPreset(preset) {
@@ -1294,9 +1297,19 @@
       customFields.fatMax.value = "30";
     }
 
+    function renderTemplatePreview() {
+      if (!templatePreview) return;
+      const template = templateCache.find((item) => item.slug === templateSelect.value);
+      const range = template?.macroRange;
+      templatePreview.textContent = range
+        ? `Carbs ${range.carbs.min}–${range.carbs.max}% · Protein ${range.protein.min}–${range.protein.max}% · Fat ${range.fat.min}–${range.fat.max}%`
+        : "Select a diet to see its macro ranges.";
+    }
+
     async function loadTemplates() {
       const result = await api("/api/plan-templates", { method: "GET" });
       const templates = result.templates || [];
+      templateCache = templates;
       if (!templates.length) {
         templateSelect.innerHTML = '<option value="">No templates available yet</option>';
         templateSelect.disabled = true;
@@ -1307,6 +1320,7 @@
       templateSelect.innerHTML = templates.map((template) => `
         <option value="${escapeHtml(template.slug)}">${escapeHtml(template.name)}${template.category ? ` — ${escapeHtml(template.category)}` : ""}</option>
       `).join("");
+      renderTemplatePreview();
     }
 
     async function loadPlans() {
@@ -1317,12 +1331,16 @@
         return;
       }
 
-      plansList.innerHTML = plans.map((plan) => `
+      plansList.innerHTML = plans.map((plan, index) => `
         <article class="feed-card">
           <div class="feed-card-header">
             <h3>${escapeHtml(plan.name)}</h3>
-            <span class="tag">${escapeHtml(plan.type)}</span>
+            <span class="tag-group">
+              ${index === 0 ? '<span class="tag tag-active">Active</span>' : ""}
+              <span class="tag">${escapeHtml(plan.type)}</span>
+            </span>
           </div>
+          ${index === 0 ? `<p class="inline-note">This is the plan used across Log, Coach, and Menu.</p>` : ""}
           <div class="feed-card-footer">
             <span class="inline-note">Created ${escapeHtml(formatDateTime(plan.createdAt))}</span>
             <button class="button button-soft" type="button" data-delete-plan="${escapeHtml(plan.id)}">Delete</button>
@@ -1342,8 +1360,15 @@
       });
     }
 
-    goalEnabled?.addEventListener("change", syncGoalLabel);
-    goalRange?.addEventListener("input", syncGoalLabel);
+    goalEnabled?.addEventListener("change", syncGoalEnabled);
+    goalRange?.addEventListener("input", () => {
+      if (goalNumber) goalNumber.value = goalRange.value;
+    });
+    goalNumber?.addEventListener("change", () => {
+      const clamped = Math.min(4500, Math.max(1200, Number(goalNumber.value) || 2000));
+      goalNumber.value = String(clamped);
+      if (goalRange) goalRange.value = String(clamped);
+    });
     goalSaveButton?.addEventListener("click", async () => {
       try {
         const payload = {
@@ -1358,6 +1383,8 @@
         setMessage("plans-goal-message", error.message, "error");
       }
     });
+
+    templateSelect.addEventListener("change", renderTemplatePreview);
 
     templateAddButton?.addEventListener("click", async () => {
       const selected = templateSelect.value;

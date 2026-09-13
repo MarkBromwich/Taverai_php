@@ -91,7 +91,7 @@ class MenuController extends Controller
             return;
         }
         $providedNutrition = isset($body['providedNutrition']) && is_array($body['providedNutrition']) ? $body['providedNutrition'] : [];
-        $plan = $this->latestPlan($userId);
+        $plan = $this->activePlan($userId);
         $profile = DietScoring::resolveProfile(is_array($plan['config'] ?? null) ? $plan['config'] : null, (string) ($plan['name'] ?? ''));
 
         $rows = [];
@@ -269,7 +269,7 @@ class MenuController extends Controller
             return;
         }
 
-        $plan = $this->latestPlan($userId);
+        $plan = $this->activePlan($userId);
         $user = $this->model('UserModel')->findWithPreferences($userId);
         $goal = isset($user['daily_calorie_goal']) && $user['daily_calorie_goal'] !== null ? (int) $user['daily_calorie_goal'] : null;
 
@@ -365,10 +365,10 @@ class MenuController extends Controller
         ]);
     }
 
-    private function latestPlan(string $userId): ?array
+    private function activePlan(string $userId): ?array
     {
         $plans = $this->model('PlanModel')->allForUser($userId);
-        return $plans !== [] ? $plans[count($plans) - 1] : null;
+        return $plans[0] ?? null;
     }
 
     private function num($value): ?float

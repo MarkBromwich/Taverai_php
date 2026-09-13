@@ -631,6 +631,25 @@ body.is-offline [data-online-only] {
     min-width: 188px;
 }
 
+.goal-number-input {
+    width: 100px;
+    text-align: center;
+    font-weight: 900;
+    padding: 6px 8px;
+}
+
+.tag-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tag-active {
+    border-color: var(--gauge-green);
+    background: rgba(34, 197, 94, 0.16);
+    color: var(--gauge-green);
+}
+
 .is-hidden {
     display: none !important;
 }

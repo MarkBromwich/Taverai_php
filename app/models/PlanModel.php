@@ -2,6 +2,10 @@
 
 class PlanModel extends BaseModel
 {
+    /**
+     * Most recently created plan first, so callers treating index 0 as the
+     * user's active plan (Log, Coach, Menu) all agree on the same one.
+     */
     public function allForUser(string $userId): array
     {
         $db = $this->db();
@@ -9,7 +13,7 @@ class PlanModel extends BaseModel
             return [];
         }
 
-        $stmt = $db->prepare('SELECT * FROM user_plans WHERE user_id = :user_id ORDER BY created_at ASC');
+        $stmt = $db->prepare('SELECT * FROM user_plans WHERE user_id = :user_id ORDER BY created_at DESC');
         $stmt->execute(['user_id' => $userId]);
         $rows = $stmt->fetchAll() ?: [];
 

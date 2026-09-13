@@ -5,7 +5,17 @@ class PlansController extends Controller
     public function templates(): void
     {
         $plans = $this->model('PlanModel');
-        $this->json(['templates' => $plans->templates()]);
+        $templates = array_map(static function (array $template): array {
+            $profile = DietScoring::resolveProfile(null, (string) ($template['slug'] ?? ''));
+            $template['macroRange'] = [
+                'carbs' => ['min' => (int) round($profile['carbs']['min'] * 100), 'max' => (int) round($profile['carbs']['max'] * 100)],
+                'protein' => ['min' => (int) round($profile['protein']['min'] * 100), 'max' => (int) round($profile['protein']['max'] * 100)],
+                'fat' => ['min' => (int) round($profile['fat']['min'] * 100), 'max' => (int) round($profile['fat']['max'] * 100)],
+            ];
+            return $template;
+        }, $plans->templates());
+
+        $this->json(['templates' => $templates]);
     }
 
     public function index(): void

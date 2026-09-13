@@ -13,7 +13,7 @@
             <input id="plans-goal-range" type="range" min="1200" max="4500" step="50" value="2000">
             <div class="feed-card-header">
                 <span class="inline-note">1200</span>
-                <strong id="plans-goal-value">—</strong>
+                <input id="plans-goal-number" class="goal-number-input" type="number" min="1200" max="4500" step="50" value="2000" aria-label="Exact calories per day">
                 <span class="inline-note">4500</span>
             </div>
         </div>
@@ -33,6 +33,7 @@
             <select id="template-select" name="templateSlug" disabled>
                 <option value="">Loading diet plans...</option>
             </select>
+            <p class="inline-note" id="template-preview">Select a diet to see its macro ranges.</p>
         </div>
         <button class="button button-primary" id="template-add-button" type="button">Add selected diet plan</button>
 
