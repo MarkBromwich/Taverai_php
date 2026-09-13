@@ -282,6 +282,8 @@ class MenuController extends Controller
                 'Make summary a brief 2 to 4 sentence explanation of why these meals fit the selected diet plan and user request.',
                 'Each day should have dayLabel and meals.',
                 'Each meal should include: mealType, title, description, calories, recipeTitle, servings, prepMinutes, cookMinutes, ingredients, instructions.',
+                'ingredients must be an array of objects, each with keys: item, amount, category. category must be one of: Produce, Protein, Dairy & Eggs, Grains & Bakery, Pantry, Frozen, Other.',
+                'instructions must be an array of plain strings, one step per entry.',
                 'Descriptions should briefly explain the nutrition/plan fit. Instructions should be clear enough to cook from.',
                 'Diet plan: ' . ($plan['name'] ?? 'No active plan'),
                 'Plan type: ' . ($plan['type'] ?? 'unknown'),
@@ -403,20 +405,9 @@ class MenuController extends Controller
                     'servings' => $this->num($meal['servings'] ?? null),
                     'prepMinutes' => $this->num($meal['prepMinutes'] ?? null),
                     'cookMinutes' => $this->num($meal['cookMinutes'] ?? null),
-                    'ingredients' => is_array($meal['ingredients'] ?? null) ? array_values(array_filter(array_map(function ($ingredient) {
-                        if (!is_array($ingredient)) {
-                            return null;
-                        }
-                        $item = trim((string) ($ingredient['item'] ?? ''));
-                        if ($item === '') {
-                            return null;
-                        }
-                        return [
-                            'item' => $item,
-                            'amount' => trim((string) ($ingredient['amount'] ?? 'to taste')) ?: 'to taste',
-                            'category' => $this->normalizeCategory($ingredient['category'] ?? 'Other'),
-                        ];
-                    }, $meal['ingredients']))) : [],
+                    'ingredients' => is_array($meal['ingredients'] ?? null)
+                        ? array_values(array_filter(array_map([$this, 'normalizeIngredient'], $meal['ingredients'])))
+                        : [],
                     'instructions' => is_array($meal['instructions'] ?? null) ? array_values(array_filter(array_map(static fn($step): string => trim((string) $step), $meal['instructions']))) : [],
                 ];
             }
@@ -485,6 +476,35 @@ class MenuController extends Controller
             $list[] = ['category' => $category, 'items' => array_values($items)];
         }
         return $list;
+    }
+
+    /**
+     * The AI is asked for {item, amount, category} objects, but sometimes
+     * returns a plain ingredient string instead (matching the instructions
+     * shape). Accept either so a format slip doesn't drop the ingredient
+     * (and with it, that item's entry in the derived grocery list).
+     */
+    private function normalizeIngredient($ingredient): ?array
+    {
+        if (is_string($ingredient)) {
+            $item = trim($ingredient);
+            return $item !== '' ? ['item' => $item, 'amount' => 'to taste', 'category' => 'Other'] : null;
+        }
+
+        if (!is_array($ingredient)) {
+            return null;
+        }
+
+        $item = trim((string) ($ingredient['item'] ?? ''));
+        if ($item === '') {
+            return null;
+        }
+
+        return [
+            'item' => $item,
+            'amount' => trim((string) ($ingredient['amount'] ?? 'to taste')) ?: 'to taste',
+            'category' => $this->normalizeCategory($ingredient['category'] ?? 'Other'),
+        ];
     }
 
     private function normalizeCategory($value): string

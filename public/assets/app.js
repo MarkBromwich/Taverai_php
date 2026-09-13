@@ -2163,6 +2163,65 @@
     return `<ol>${instructions.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol>`;
   }
 
+  function groceryListSection(groceryList) {
+    if (!Array.isArray(groceryList) || !groceryList.length) {
+      return "";
+    }
+
+    return `
+      <section class="recipe-section grocery-section">
+        <h4>Grocery List</h4>
+        <div class="grocery-columns">
+          ${groceryList.map((group) => `
+            <div class="grocery-category">
+              <h6>${escapeHtml(group.category || "Other")}</h6>
+              <ul class="grocery-items">
+                ${(group.items || []).map((item) => `
+                  <li><label><input type="checkbox"> ${escapeHtml(item)}</label></li>
+                `).join("")}
+              </ul>
+            </div>
+          `).join("")}
+        </div>
+      </section>
+    `;
+  }
+
+  function prepTipsSection(prepTips) {
+    if (!Array.isArray(prepTips) || !prepTips.length) {
+      return "";
+    }
+
+    return `
+      <section class="recipe-section prep-tips-section">
+        <h4>Prep Tips</h4>
+        <ul>${prepTips.map((tip) => `<li>${escapeHtml(tip)}</li>`).join("")}</ul>
+      </section>
+    `;
+  }
+
+  function bindLogOptionButtons(container, messageId) {
+    container.querySelectorAll("[data-log-option]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        try {
+          await api("/api/entries", {
+            method: "POST",
+            body: JSON.stringify({
+              text: button.getAttribute("data-log-option"),
+              calories: button.getAttribute("data-calories") || null,
+              proteinG: button.getAttribute("data-protein") || null,
+              carbsG: button.getAttribute("data-carbs") || null,
+              fatG: button.getAttribute("data-fat") || null,
+            }),
+          });
+          setMessage(messageId, "Logged to your entries.", "success");
+        } catch (error) {
+          setMessage(messageId, error.message, "error");
+        }
+      });
+    });
+  }
+
   async function initMenu() {
     const currentUser = await requireAuth();
     if (!currentUser) return;
@@ -2409,7 +2468,10 @@
         });
 
         const ranked = result.ranked || [];
-        compareResults.innerHTML = ranked.map((option, index) => `
+        const planNote = result.plan?.name
+          ? `<p class="inline-note">Ranked against: ${escapeHtml(result.plan.name)}</p>`
+          : "";
+        compareResults.innerHTML = planNote + ranked.map((option, index) => `
           <article class="feed-card">
             <div class="feed-card-header">
               <h3>${index === 0 ? "Best fit" : "Option"}: ${escapeHtml(option.name)}</h3>
@@ -2420,6 +2482,8 @@
               option.proteinG != null ? `${Math.round(option.proteinG)}g protein` : null,
               option.carbsG != null ? `${Math.round(option.carbsG)}g carbs` : null,
               option.fatG != null ? `${Math.round(option.fatG)}g fat` : null,
+              option.sugarG != null ? `${Math.round(option.sugarG)}g sugar` : null,
+              option.fiberG != null ? `${Math.round(option.fiberG)}g fiber` : null,
             ].filter(Boolean).join(" • ") || "Estimated with limited nutrition detail.")}</p>
             <p>${escapeHtml((option.reasons || []).join(" • ") || option.summary || "")}</p>
             ${option.assumptions?.length ? `<p class="inline-note">Matched from "${escapeHtml(option.inputText || option.name)}"${option.restaurant ? ` at ${escapeHtml(option.restaurant)}` : ""}: ${escapeHtml(option.assumptions.join(" • "))}</p>` : ""}
@@ -2434,25 +2498,7 @@
           </article>
         `).join("");
 
-        compareResults.querySelectorAll("[data-log-option]").forEach((button) => {
-          button.addEventListener("click", async () => {
-            try {
-              await api("/api/entries", {
-                method: "POST",
-                body: JSON.stringify({
-                  text: button.getAttribute("data-log-option"),
-                  calories: button.getAttribute("data-calories") || null,
-                  proteinG: button.getAttribute("data-protein") || null,
-                  carbsG: button.getAttribute("data-carbs") || null,
-                  fatG: button.getAttribute("data-fat") || null,
-                }),
-              });
-              setMessage("menu-compare-message", "Option logged to your entries.", "success");
-            } catch (error) {
-              setMessage("menu-compare-message", error.message, "error");
-            }
-          });
-        });
+        bindLogOptionButtons(compareResults, "menu-compare-message");
       } catch (error) {
         compareResults.innerHTML = `<p class="empty-state">${escapeHtml(error.message)}</p>`;
         setMessage("menu-compare-message", error.message, "error");
@@ -2491,6 +2537,7 @@
                 <span>${escapeHtml(payload.mealTypes.join(", "))}</span>
               </div>
             </header>
+            ${prepTipsSection(result.prepTips)}
             <section class="meal-plan-brief">
               <h4>Meal Overview</h4>
               ${allMeals.map(({ day, meal }) => `
@@ -2501,6 +2548,7 @@
                 </article>
               `).join("")}
             </section>
+            ${groceryListSection(result.groceryList)}
             <section class="recipe-section">
               <h4>Recipes</h4>
               ${allMeals.map(({ day, meal }) => `
@@ -2640,8 +2688,16 @@
               product.satFatG != null ? `${Math.round(product.satFatG)}g sat fat` : null,
             ].filter(Boolean).join(" • ") || "No nutrition values found.")}</p>
             ${product.servingSize ? `<p class="inline-note">Serving size: ${escapeHtml(product.servingSize)}</p>` : ""}
+            <div class="feed-card-footer">
+              <button class="button button-soft" type="button" data-log-option="${escapeHtml(product.name || "Barcode item")}"
+                data-calories="${escapeHtml(product.calories ?? "")}"
+                data-protein="${escapeHtml(product.proteinG ?? "")}"
+                data-carbs="${escapeHtml(product.carbsG ?? "")}"
+                data-fat="${escapeHtml(product.fatG ?? "")}">Log this item</button>
+            </div>
           </article>
         `;
+        bindLogOptionButtons(barcodeResults, "barcode-message");
       } catch (error) {
         barcodeResults.innerHTML = `<p class="empty-state">${escapeHtml(error.message)}</p>`;
         setMessage("barcode-message", error.message, "error");

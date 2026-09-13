@@ -2163,6 +2163,49 @@ body.is-offline [data-online-only] {
     margin-top: 6px;
 }
 
+.grocery-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 18px;
+}
+
+.grocery-items {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 7px;
+}
+
+.grocery-items label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.grocery-items input[type="checkbox"] {
+    margin-top: 2px;
+    accent-color: #5d86e8;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.grocery-items li:has(input:checked) label {
+    color: #94a3b8;
+    text-decoration: line-through;
+}
+
+.prep-tips-section ul {
+    margin: 8px 0 0;
+    padding-left: 20px;
+}
+
+.prep-tips-section li + li {
+    margin-top: 6px;
+}
+
 .document-save-button {
     border-color: #334155;
     background: #1f2937;
