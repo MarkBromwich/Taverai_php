@@ -1952,10 +1952,10 @@
 
     const width = 320;
     const height = 160;
-    const padTop = 18;
-    const padRight = 14;
+    const padTop = 20;
+    const padRight = 8;
     const padBottom = 16;
-    const padLeft = 32;
+    const padLeft = 26;
     const goal = Number.isFinite(Number(options.goal)) && Number(options.goal) > 0 ? Number(options.goal) : null;
     const max = kind === "score" ? 100 : Math.max(...numeric, goal || 0, 1);
     const min = 0;
@@ -2000,16 +2000,21 @@
 
     // Y-axis: three reference gridlines (0 / half / max) with their values
     // labeled directly on the chart, since touch devices can't hover for a
-    // tooltip the way a mouse can.
+    // tooltip the way a mouse can. When the top gridline is the calorie
+    // goal, it's labeled "Goal" instead of a second, overlap-prone label
+    // floating over the dashed goal line itself.
     const gridLines = [0, max / 2, max].map((value) => {
       const y = yFor(value);
-      return `<line class="trend-grid-line" x1="${padLeft}" y1="${y.toFixed(1)}" x2="${width - padRight}" y2="${y.toFixed(1)}"></line>
-        <text class="trend-axis-label" x="${(padLeft - 6).toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="end">${Math.round(value)}</text>`;
+      const isGoalLine = goal != null && Math.abs(value - goal) < 0.5;
+      const valueLabel = `<text class="trend-axis-label" x="${(padLeft - 6).toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="end">${Math.round(value)}</text>`;
+      const goalLabel = isGoalLine
+        ? `<text class="trend-axis-label trend-goal-label" x="${(padLeft - 6).toFixed(1)}" y="${(y - 6).toFixed(1)}" text-anchor="end">Goal</text>`
+        : "";
+      return `<line class="trend-grid-line" x1="${padLeft}" y1="${y.toFixed(1)}" x2="${width - padRight}" y2="${y.toFixed(1)}"></line>${goalLabel}${valueLabel}`;
     }).join("");
 
     const goalLine = goal != null && goal <= max * 1.02
-      ? `<line class="trend-goal-line" x1="${padLeft}" y1="${yFor(goal).toFixed(1)}" x2="${width - padRight}" y2="${yFor(goal).toFixed(1)}"></line>
-        <text class="trend-axis-label trend-goal-label" x="${(width - padRight).toFixed(1)}" y="${(yFor(goal) - 4).toFixed(1)}" text-anchor="end">Goal ${Math.round(goal)}</text>`
+      ? `<line class="trend-goal-line" x1="${padLeft}" y1="${yFor(goal).toFixed(1)}" x2="${width - padRight}" y2="${yFor(goal).toFixed(1)}"></line>`
       : "";
 
     // Label the most recent logged value directly, since it's the number

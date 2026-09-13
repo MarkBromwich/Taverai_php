@@ -2273,13 +2273,13 @@ body.is-offline [data-online-only] {
 }
 
 .trend-chart .trend-grid-line {
-    stroke: rgba(178, 194, 214, 0.12);
+    stroke: rgba(178, 194, 214, 0.22);
     stroke-width: 1;
     stroke-dasharray: 2 3;
 }
 
 .trend-chart .trend-axis-label {
-    fill: var(--faint);
+    fill: var(--muted);
 }
 
 .trend-chart .trend-goal-line {
